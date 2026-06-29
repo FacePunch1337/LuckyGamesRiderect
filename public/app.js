@@ -509,7 +509,9 @@ function startPlane(event) {
   badge.textContent = "x1.00";
 
   planeTicker = window.setInterval(() => {
-    planeMultiplier = Math.min(planeMultiplier + (isJackpot ? 0.12 : 0.09), planeTargetMultiplier);
+    planeMultiplier = isJackpot
+      ? Math.min(planeMultiplier + 0.055, planeTargetMultiplier)
+      : planeMultiplier + 0.041;
     planeProgress = Math.min((planeMultiplier - 1) / 4, 1);
     const motion = getPlaneMotion(sky, planeProgress);
 
@@ -520,7 +522,7 @@ function startPlane(event) {
     if (isJackpot && planeMultiplier >= planeTargetMultiplier) {
       finishPlane(true);
     }
-  }, 70);
+  }, 32);
 
   planeTimer = window.setTimeout(
     () => {
@@ -539,19 +541,19 @@ function getPlaneMotion(sky, progress) {
   const t = Math.max(0, Math.min(progress, 1));
   const centerX = (width - planeWidth) / 2;
   const centerY = (height - planeHeight) / 2;
-  const amplitudeY = Math.min(42, height * 0.12);
-  const phase = t * Math.PI * 5.2;
+  const amplitudeY = Math.min(34, height * 0.095);
+  const phase = t * Math.PI * 3.05;
   const x = centerX;
-  const y = centerY + Math.sin(phase) * amplitudeY;
-  const virtualForwardSpeed = width * 0.42;
-  const dy = Math.cos(phase) * Math.PI * 5.2 * amplitudeY;
+  const y = centerY - Math.sin(phase) * amplitudeY;
+  const virtualForwardSpeed = width * 0.58;
+  const dy = -Math.cos(phase) * Math.PI * 3.05 * amplitudeY;
   const dx = virtualForwardSpeed;
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
   return {
     x: Math.round(Math.max(16, Math.min(width - planeWidth - 16, x))),
     y: Math.round(Math.max(18, Math.min(height - planeHeight - 18, y))),
-    angle: Math.round(Math.max(-34, Math.min(34, angle))),
+    angle: Math.round(Math.max(-26, Math.min(26, angle))),
     badgeX: Math.round(Math.max(14, Math.min(width - 86, x + planeWidth * 0.35))),
     badgeY: Math.round(Math.max(12, Math.min(height - 42, y - 40))),
   };
@@ -581,11 +583,13 @@ function finishPlane(isJackpot) {
   plane.style.setProperty("--crash-x", `${crashMotion.x}px`);
   plane.style.setProperty("--crash-y", `${crashMotion.y}px`);
   plane.style.setProperty("--crash-angle", `${crashMotion.angle}deg`);
-  plane.style.setProperty("--crash-mid-x", `${Math.max(16, crashMotion.x - 18)}px`);
-  plane.style.setProperty("--crash-mid-y", `${Math.min(sky.clientHeight - 88, crashMotion.y + 44)}px`);
-  plane.style.setProperty("--crash-end-x", `${Math.max(16, crashMotion.x - 34)}px`);
-  plane.style.setProperty("--crash-end-y", `${Math.min(sky.clientHeight - 58, crashMotion.y + 92)}px`);
-  sky.classList.remove("is-flying");
+  plane.style.setProperty("--crash-mid-x", `${crashMotion.x}px`);
+  plane.style.setProperty("--crash-mid-y", `${Math.min(sky.clientHeight - 84, crashMotion.y + 58)}px`);
+  plane.style.setProperty("--crash-end-x", `${crashMotion.x}px`);
+  plane.style.setProperty("--crash-end-y", `${Math.min(sky.clientHeight - 40, crashMotion.y + 150)}px`);
+  if (isJackpot) {
+    sky.classList.remove("is-flying");
+  }
   plane.classList.add(isJackpot ? "winner" : "crashed");
   status.textContent = isJackpot ? `Max flight reached: x${planeMultiplier.toFixed(2)}!` : `Crashed at x${planeMultiplier.toFixed(2)}. Try again.`;
   if (audioUnlocked && !isJackpot) {
@@ -598,6 +602,7 @@ function finishPlane(isJackpot) {
   }
 
   window.setTimeout(() => {
+    sky.classList.remove("is-flying");
     plane.classList.remove("crashed", "winner");
     resetPlanePosition();
     document.querySelector("#planeMultiplier").textContent = "x1.00";
