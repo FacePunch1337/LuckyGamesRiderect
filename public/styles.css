@@ -608,6 +608,8 @@ h2 {
   position: absolute;
   top: -40px;
   border-radius: 3px;
+  opacity: 0;
+  transform-origin: center;
   animation: confettiFall linear forwards;
 }
 
@@ -619,6 +621,20 @@ h2 {
   color: rgba(120, 61, 0, 0.78);
   font-size: 11px;
   box-shadow: 0 0 18px rgba(255, 189, 32, 0.72);
+}
+
+.confetti-piece.suit {
+  display: grid;
+  place-items: center;
+  width: auto;
+  height: auto;
+  color: #ffe87d;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow:
+    0 0 10px rgba(255, 189, 32, 0.86),
+    0 2px 0 rgba(0, 0, 0, 0.34);
 }
 
 .site-footer {

@@ -132,27 +132,29 @@ function renderWins() {
 
 function launchConfetti() {
   confettiLayer.innerHTML = "";
-  Array.from({ length: 68 }, (_, index) => {
+  Array.from({ length: 180 }, (_, index) => {
     const piece = document.createElement("span");
-    const isCoin = index % 4 === 0;
-    const size = isCoin ? 18 + Math.random() * 16 : 8 + Math.random() * 10;
-    piece.className = isCoin ? "confetti-piece coin" : "confetti-piece";
-    piece.textContent = isCoin ? "●" : "";
+    const isCoin = index % 5 === 0;
+    const isSuit = index % 9 === 0;
+    const size = isCoin ? 18 + Math.random() * 18 : isSuit ? 16 + Math.random() * 14 : 7 + Math.random() * 13;
+
+    piece.className = isCoin ? "confetti-piece coin" : isSuit ? "confetti-piece suit" : "confetti-piece";
+    piece.textContent = isCoin ? "●" : isSuit ? ["♠", "♥", "♦", "♣"][index % 4] : "";
     piece.style.left = `${Math.random() * 100}%`;
     piece.style.width = `${size}px`;
     piece.style.height = `${size}px`;
-    piece.style.animationDelay = `${Math.random() * 0.7}s`;
-    piece.style.animationDuration = `${2.4 + Math.random() * 1.8}s`;
-    piece.style.setProperty("--drift", `${Math.random() * 220 - 110}px`);
-    piece.style.setProperty("--spin", `${Math.random() * 720 - 360}deg`);
+    piece.style.animationDelay = `${Math.random() * 1.25}s`;
+    piece.style.animationDuration = `${3.1 + Math.random() * 2.6}s`;
+    piece.style.setProperty("--drift", `${Math.random() * 420 - 210}px`);
+    piece.style.setProperty("--spin", `${Math.random() * 1080 - 540}deg`);
 
-    if (!isCoin) {
+    if (!isCoin && !isSuit) {
       const colors = ["#ffbd20", "#ff4d6d", "#31d0ff", "#6df178", "#b66dff", "#ffffff"];
       piece.style.background = colors[index % colors.length];
     }
 
     confettiLayer.appendChild(piece);
-    window.setTimeout(() => piece.remove(), 4600);
+    window.setTimeout(() => piece.remove(), 6200);
   });
 }
 
