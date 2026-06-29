@@ -627,8 +627,7 @@ h1 {
 }
 
 .plane.crashed {
-  transition: none;
-  animation: planeCrash 1.25s cubic-bezier(0.2, 0.04, 0.48, 1) forwards;
+  animation: none;
 }
 
 .plane.winner {
@@ -1073,13 +1072,6 @@ h2 {
 @keyframes cloudRush {
   from { transform: translate(220px, -110px) scale(1); }
   to { transform: translate(-420px, 210px) scale(1); }
-}
-
-@keyframes planeCrash {
-  0% { transform: translate(var(--crash-x, 297px), var(--crash-y, 156px)) rotate(var(--crash-angle, -15deg)); opacity: 1; }
-  34% { transform: translate(var(--crash-mid-x, 297px), var(--crash-mid-y, 202px)) rotate(20deg); opacity: 1; }
-  68% { transform: translate(var(--crash-mid-x, 297px), calc(var(--crash-mid-y, 202px) + 34px)) rotate(39deg); opacity: 0.82; }
-  100% { transform: translate(var(--crash-end-x, 297px), var(--crash-end-y, 282px)) rotate(58deg); opacity: 0.35; }
 }
 
 @keyframes planeWin {

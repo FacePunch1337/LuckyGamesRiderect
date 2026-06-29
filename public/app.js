@@ -579,18 +579,12 @@ function finishPlane(isJackpot) {
   const plane = document.querySelector("#plane");
   const sky = document.querySelector("#skyTrack");
   const status = document.querySelector("#planeStatus");
-  const crashMotion = getPlaneMotion(sky, planeProgress);
-  plane.style.setProperty("--crash-x", `${crashMotion.x}px`);
-  plane.style.setProperty("--crash-y", `${crashMotion.y}px`);
-  plane.style.setProperty("--crash-angle", `${crashMotion.angle}deg`);
-  plane.style.setProperty("--crash-mid-x", `${crashMotion.x}px`);
-  plane.style.setProperty("--crash-mid-y", `${Math.min(sky.clientHeight - 94, crashMotion.y + 46)}px`);
-  plane.style.setProperty("--crash-end-x", `${crashMotion.x}px`);
-  plane.style.setProperty("--crash-end-y", `${Math.min(sky.clientHeight - 52, crashMotion.y + 126)}px`);
   if (isJackpot) {
     sky.classList.remove("is-flying");
+    plane.classList.add("winner");
+  } else {
+    animatePlaneCrash(plane, sky);
   }
-  plane.classList.add(isJackpot ? "winner" : "crashed");
   status.textContent = isJackpot ? `Max flight reached: x${planeMultiplier.toFixed(2)}!` : `Crashed at x${planeMultiplier.toFixed(2)}. Try again.`;
   if (audioUnlocked && !isJackpot) {
     safePlay(getGameSounds()?.explosion);
@@ -604,6 +598,8 @@ function finishPlane(isJackpot) {
   window.setTimeout(() => {
     sky.classList.remove("is-flying");
     plane.classList.remove("crashed", "winner");
+    plane.style.removeProperty("opacity");
+    plane.style.removeProperty("transition");
     resetPlanePosition();
     document.querySelector("#planeMultiplier").textContent = "x1.00";
     status.textContent = "Hold to take off.";
@@ -613,6 +609,27 @@ function finishPlane(isJackpot) {
   if (isJackpot) {
     trackRedirectAndGo();
   }
+}
+
+function animatePlaneCrash(plane, sky) {
+  const crashMotion = getPlaneMotion(sky, planeProgress);
+  const endY = Math.min(sky.clientHeight - 52, crashMotion.y + 126);
+  const currentTransform = getComputedStyle(plane).transform;
+
+  plane.classList.add("crashed");
+  plane.style.transition = "none";
+  plane.style.transform = currentTransform === "none"
+    ? `translate(${crashMotion.x}px, ${crashMotion.y}px) rotate(${crashMotion.angle}deg)`
+    : currentTransform;
+  plane.style.opacity = "1";
+
+  plane.offsetHeight;
+
+  window.requestAnimationFrame(() => {
+    plane.style.transition = "transform 1.35s cubic-bezier(0.22, 0.04, 0.36, 1), opacity 1.35s ease";
+    plane.style.transform = `translate(${crashMotion.x}px, ${endY}px) rotate(54deg)`;
+    plane.style.opacity = "0.36";
+  });
 }
 
 function initGame() {
