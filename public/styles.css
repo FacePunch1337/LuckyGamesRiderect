@@ -346,18 +346,6 @@ h1 {
   text-shadow: 0 4px 0 rgba(0, 0, 0, 0.14);
 }
 
-.slot-payline {
-  position: absolute;
-  z-index: 3;
-  left: 32px;
-  right: 32px;
-  top: 149px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255, 77, 109, 0.92), transparent);
-  box-shadow: 0 0 14px rgba(255, 77, 109, 0.9);
-  pointer-events: none;
-}
-
 .slot-lever {
   position: absolute;
   right: -22px;

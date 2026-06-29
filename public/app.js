@@ -245,7 +245,6 @@ function buildSlots() {
           )
           .join("")}
       </div>
-      <div class="slot-payline" aria-hidden="true"></div>
       <div class="slot-lever" aria-hidden="true"><span></span></div>
       <div class="payline">Match 3 symbols to unlock the jackpot</div>
     </div>
