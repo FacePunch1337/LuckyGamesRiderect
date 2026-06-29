@@ -544,7 +544,7 @@ function getPlaneMotion(sky, progress) {
   const t = Math.max(0, Math.min(progress, 1));
   const centerX = (width - planeWidth) / 2;
   const centerY = (height - planeHeight) / 2;
-  const phase = t * Math.PI * 2.15;
+  const phase = t * Math.PI * 6.4;
   const x = centerX;
   const y = centerY;
   const baseAngle = -15;
