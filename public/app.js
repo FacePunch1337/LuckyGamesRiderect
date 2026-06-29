@@ -75,6 +75,7 @@ let planeTicker = null;
 let planeResolved = false;
 let planeMultiplier = 1;
 let planeTargetMultiplier = 2.1;
+let planeProgress = 0;
 let winCloseTimer = null;
 let audioUnlocked = false;
 let gameSounds = null;
@@ -462,12 +463,24 @@ function buildPlane() {
 
   const button = document.querySelector("#gameButton");
   const pad = document.querySelector("#planePad");
+  resetPlanePosition();
   [button, pad].forEach((element) => {
     element.addEventListener("pointerdown", startPlane);
     element.addEventListener("pointerup", releasePlane);
     element.addEventListener("pointerleave", releasePlane);
     element.addEventListener("pointercancel", releasePlane);
   });
+}
+
+function resetPlanePosition() {
+  const sky = document.querySelector("#skyTrack");
+  const plane = document.querySelector("#plane");
+  const badge = document.querySelector("#planeMultiplier");
+  if (!sky || !plane || !badge) return;
+
+  const motion = getPlaneMotion(sky, 0);
+  plane.style.transform = `translate(${motion.x}px, ${motion.y}px) rotate(${motion.angle}deg)`;
+  badge.style.transform = `translate(${motion.badgeX}px, ${motion.badgeY}px)`;
 }
 
 function startPlane(event) {
@@ -488,6 +501,7 @@ function startPlane(event) {
   const status = document.querySelector("#planeStatus");
   const isJackpot = attemptsUsed % redirectEvery === 0;
   planeMultiplier = 1;
+  planeProgress = 0;
   planeTargetMultiplier = isJackpot ? 5 : 1.7 + Math.random() * 0.8;
   plane.classList.remove("crashed", "winner");
   sky.classList.add("is-flying");
@@ -496,10 +510,11 @@ function startPlane(event) {
 
   planeTicker = window.setInterval(() => {
     planeMultiplier = Math.min(planeMultiplier + (isJackpot ? 0.12 : 0.09), planeTargetMultiplier);
-    const bob = Math.sin(planeMultiplier * 5.2) * 10;
+    planeProgress = Math.min((planeMultiplier - 1) / 4, 1);
+    const motion = getPlaneMotion(sky, planeProgress);
 
-    plane.style.transform = `translate(126px, ${82 + bob}px) rotate(-24deg)`;
-    badge.style.transform = `translate(142px, ${64 + bob}px)`;
+    plane.style.transform = `translate(${motion.x}px, ${motion.y}px) rotate(${motion.angle}deg)`;
+    badge.style.transform = `translate(${motion.badgeX}px, ${motion.badgeY}px)`;
     badge.textContent = `x${planeMultiplier.toFixed(2)}`;
 
     if (isJackpot && planeMultiplier >= planeTargetMultiplier) {
@@ -513,6 +528,37 @@ function startPlane(event) {
     },
     isJackpot ? 2600 : 850 + Math.random() * 850
   );
+}
+
+function getPlaneMotion(sky, progress) {
+  const width = sky.clientWidth || 340;
+  const height = sky.clientHeight || 238;
+  const planeElement = document.querySelector("#plane");
+  const planeWidth = planeElement?.offsetWidth || 126;
+  const planeHeight = planeElement?.offsetHeight || 78;
+  const t = Math.max(0, Math.min(progress, 1));
+  const startX = width * 0.22;
+  const endX = width * 0.66;
+  const startY = height * 0.58;
+  const endY = height * 0.22;
+  const wave = Math.sin(t * Math.PI * 2.4) * height * 0.045;
+  const x = startX + (endX - startX) * t + Math.sin(t * Math.PI * 1.4) * width * 0.035;
+  const y = startY + (endY - startY) * t + wave;
+  const dx =
+    (endX - startX) +
+    Math.cos(t * Math.PI * 1.4) * Math.PI * 1.4 * width * 0.035;
+  const dy =
+    (endY - startY) +
+    Math.cos(t * Math.PI * 2.4) * Math.PI * 2.4 * height * 0.045;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+  return {
+    x: Math.round(Math.max(16, Math.min(width - planeWidth - 16, x))),
+    y: Math.round(Math.max(18, Math.min(height - planeHeight - 18, y))),
+    angle: Math.round(Math.max(-40, Math.min(-4, angle))),
+    badgeX: Math.round(Math.max(14, Math.min(width - 86, x + planeWidth * 0.35))),
+    badgeY: Math.round(Math.max(12, Math.min(height - 42, y - 40))),
+  };
 }
 
 function releasePlane() {
@@ -535,6 +581,14 @@ function finishPlane(isJackpot) {
   const plane = document.querySelector("#plane");
   const sky = document.querySelector("#skyTrack");
   const status = document.querySelector("#planeStatus");
+  const crashMotion = getPlaneMotion(sky, planeProgress);
+  plane.style.setProperty("--crash-x", `${crashMotion.x}px`);
+  plane.style.setProperty("--crash-y", `${crashMotion.y}px`);
+  plane.style.setProperty("--crash-angle", `${crashMotion.angle}deg`);
+  plane.style.setProperty("--crash-mid-x", `${Math.max(16, crashMotion.x - 18)}px`);
+  plane.style.setProperty("--crash-mid-y", `${Math.min(sky.clientHeight - 88, crashMotion.y + 44)}px`);
+  plane.style.setProperty("--crash-end-x", `${Math.max(16, crashMotion.x - 34)}px`);
+  plane.style.setProperty("--crash-end-y", `${Math.min(sky.clientHeight - 58, crashMotion.y + 92)}px`);
   sky.classList.remove("is-flying");
   plane.classList.add(isJackpot ? "winner" : "crashed");
   status.textContent = isJackpot ? `Max flight reached: x${planeMultiplier.toFixed(2)}!` : `Crashed at x${planeMultiplier.toFixed(2)}. Try again.`;
@@ -549,8 +603,7 @@ function finishPlane(isJackpot) {
 
   window.setTimeout(() => {
     plane.classList.remove("crashed", "winner");
-    plane.style.transform = "translate(126px, 82px) rotate(-24deg)";
-    document.querySelector("#planeMultiplier").style.transform = "translate(142px, 64px)";
+    resetPlanePosition();
     document.querySelector("#planeMultiplier").textContent = "x1.00";
     status.textContent = "Hold to take off.";
     isBusy = false;
