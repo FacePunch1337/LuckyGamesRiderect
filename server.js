@@ -257,6 +257,30 @@ async function getAnalyticsSummary() {
   };
 }
 
+async function getAnalyticsExport() {
+  const db = await getPool();
+  const [summary, pageViews, redirects] = await Promise.all([
+    getAnalyticsSummary(),
+    db.query(`
+      SELECT id, game, session_id, ip_hash, country, region, city, geo_source, user_agent, referrer, created_at
+      FROM page_views
+      ORDER BY created_at DESC
+    `),
+    db.query(`
+      SELECT id, game, session_id, target_url, ip_hash, country, region, city, geo_source, user_agent, referrer, created_at
+      FROM redirects
+      ORDER BY created_at DESC
+    `),
+  ]);
+
+  return {
+    exportedAt: new Date().toISOString(),
+    summary,
+    pageViews: pageViews.rows,
+    redirects: redirects.rows,
+  };
+}
+
 function requireAdmin(req, res, next) {
   if (!adminPassword) {
     return next();
@@ -283,6 +307,71 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function downloadFileName(extension) {
+  return `lucky-games-analytics-${new Date().toISOString().slice(0, 10)}.${extension}`;
+}
+
+function csvValue(value) {
+  if (value == null) {
+    return "";
+  }
+
+  const text = value instanceof Date ? value.toISOString() : String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function toEventsCsv(exportData) {
+  const header = [
+    "event_type",
+    "id",
+    "game",
+    "session_id",
+    "target_url",
+    "country",
+    "region",
+    "city",
+    "geo_source",
+    "ip_hash",
+    "referrer",
+    "user_agent",
+    "created_at",
+  ];
+
+  const pageViewRows = exportData.pageViews.map((row) => [
+    "page_view",
+    row.id,
+    row.game,
+    row.session_id,
+    "",
+    row.country,
+    row.region,
+    row.city,
+    row.geo_source,
+    row.ip_hash,
+    row.referrer,
+    row.user_agent,
+    row.created_at,
+  ]);
+
+  const redirectRows = exportData.redirects.map((row) => [
+    "redirect",
+    row.id,
+    row.game,
+    row.session_id,
+    row.target_url,
+    row.country,
+    row.region,
+    row.city,
+    row.geo_source,
+    row.ip_hash,
+    row.referrer,
+    row.user_agent,
+    row.created_at,
+  ]);
+
+  return [header, ...pageViewRows, ...redirectRows].map((row) => row.map(csvValue).join(",")).join("\n");
+}
+
 app.get("/admin", requireAdmin, async (_req, res) => {
   try {
     const summary = await getAnalyticsSummary();
@@ -296,6 +385,11 @@ app.get("/admin", requireAdmin, async (_req, res) => {
     body { margin: 0; font-family: Inter, Arial, sans-serif; background: #0c1024; color: #f8fafc; }
     main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 48px; }
     h1 { color: #ffbd20; margin: 0 0 24px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .topbar h1 { margin: 0; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .button { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 8px; background: #ffbd20; color: #111827; font-weight: 800; text-decoration: none; }
+    .button.secondary { background: #263451; color: #f8fafc; border: 1px solid rgba(255, 189, 32, .25); }
     .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
     .card, table { background: #151d35; border: 1px solid rgba(255, 189, 32, .22); border-radius: 8px; }
     .card { padding: 22px; }
@@ -310,7 +404,13 @@ app.get("/admin", requireAdmin, async (_req, res) => {
 </head>
 <body>
   <main>
-    <h1>Lucky Games Analytics</h1>
+    <div class="topbar">
+      <h1>Lucky Games Analytics</h1>
+      <div class="actions">
+        <a class="button" href="/admin/export.json${adminPassword ? `?key=${encodeURIComponent(adminPassword)}` : ""}" download>Download JSON</a>
+        <a class="button secondary" href="/admin/export.csv${adminPassword ? `?key=${encodeURIComponent(adminPassword)}` : ""}" download>Download CSV</a>
+      </div>
+    </div>
     <div class="cards">
       <div class="card"><span>Total page visits</span><b>${summary.totalViews}</b></div>
       <div class="card"><span>Total redirects</span><b>${summary.totalRedirects}</b></div>
@@ -336,6 +436,28 @@ app.get("/admin", requireAdmin, async (_req, res) => {
 </html>`);
   } catch (error) {
     res.status(500).send(`Admin error: ${error.message}`);
+  }
+});
+
+app.get("/admin/export.json", requireAdmin, async (_req, res) => {
+  try {
+    const exportData = await getAnalyticsExport();
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${downloadFileName("json")}"`);
+    res.send(JSON.stringify(exportData, null, 2));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/admin/export.csv", requireAdmin, async (_req, res) => {
+  try {
+    const exportData = await getAnalyticsExport();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${downloadFileName("csv")}"`);
+    res.send(toEventsCsv(exportData));
+  } catch (error) {
+    res.status(500).send(`Export error: ${error.message}`);
   }
 });
 
