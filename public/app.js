@@ -23,10 +23,10 @@ const games = [
     subtitle: "Pull the lever and match the winning row.",
   },
   {
-    id: "balloon",
-    title: "Lucky Balloon Pop",
+    id: "plane",
+    title: "Lucky Flight",
     eyebrow: "Press and hold",
-    subtitle: "Inflate the balloon and chase the prize before it pops.",
+    subtitle: "Hold to fly higher and chase the jackpot multiplier.",
   },
 ];
 
@@ -46,12 +46,6 @@ const gameAudioFiles = {
     action: "/games/slots/assets/audio/spin.mp3",
     win: "/games/slots/assets/audio/win.mp3",
   },
-  balloon: {
-    background: "/games/balloon/assets/audio/background.mp3",
-    action: "/games/balloon/assets/audio/inflating.mp3",
-    explosion: "/games/balloon/assets/audio/explosion.mp3",
-    win: "/games/balloon/assets/audio/win.mp3",
-  },
 };
 
 const gameStage = document.querySelector("#gameStage");
@@ -68,18 +62,19 @@ const redirectEvery = 3;
 const sessionId = localStorage.getItem("luckySessionId") || crypto.randomUUID();
 localStorage.setItem("luckySessionId", sessionId);
 
-const requestedGame = new URLSearchParams(window.location.search).get("game");
+const requestedGameRaw = new URLSearchParams(window.location.search).get("game");
+const requestedGame = requestedGameRaw === "balloon" ? "plane" : requestedGameRaw;
 const selectedGame = games.find((game) => game.id === requestedGame) || games[Math.floor(Math.random() * games.length)];
 let clientGeo = null;
 let clientGeoPromise = resolveClientGeo();
 let attemptsUsed = 0;
 let wheelRotation = 0;
 let isBusy = false;
-let balloonTimer = null;
-let balloonScale = 1;
-let balloonGrowth = null;
-let balloonResolved = false;
-let balloonTargetScale = 1.18;
+let planeTimer = null;
+let planeTicker = null;
+let planeResolved = false;
+let planeMultiplier = 1;
+let planeTargetMultiplier = 2.1;
 let winCloseTimer = null;
 let audioUnlocked = false;
 let gameSounds = null;
@@ -108,11 +103,9 @@ function getGameSounds() {
     gameSounds.explosion = new Audio(files.explosion);
   }
   gameSounds.background.loop = true;
-  if (selectedGame.id === "balloon") {
-    gameSounds.action.loop = true;
-  }
+  gameSounds.action.loop = Boolean(files.loopAction);
   gameSounds.background.volume = 0.32;
-  gameSounds.action.volume = selectedGame.id === "balloon" ? 0.55 : 0.72;
+  gameSounds.action.volume = files.actionVolume || 0.72;
   gameSounds.win.volume = 0.88;
   if (gameSounds.explosion) {
     gameSounds.explosion.volume = 0.9;
@@ -450,33 +443,36 @@ function getNonWinningSlotResult() {
   return result;
 }
 
-function buildBalloon() {
+function buildPlane() {
   gameStage.innerHTML = `
-    <div class="balloon-game" id="balloonPad">
-      <div class="balloon-frame">
-        <div class="balloon" id="balloon">💰</div>
-        <div class="balloon-string"></div>
+    <div class="plane-game" id="planePad">
+      <div class="sky-track" id="skyTrack">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="multiplier-badge" id="planeMultiplier">x1.00</div>
+        <div class="plane" id="plane">✈</div>
       </div>
-      <p class="balloon-status" id="balloonStatus">Hold anywhere on the balloon to inflate.</p>
+      <p class="plane-status" id="planeStatus">Hold to take off.</p>
     </div>
-    <button class="spin-button hold-button" id="gameButton" type="button">Hold to Inflate</button>
+    <button class="spin-button hold-button" id="gameButton" type="button">Hold to Fly</button>
   `;
 
   const button = document.querySelector("#gameButton");
-  const pad = document.querySelector("#balloonPad");
+  const pad = document.querySelector("#planePad");
   [button, pad].forEach((element) => {
-    element.addEventListener("pointerdown", startBalloon);
-    element.addEventListener("pointerup", releaseBalloon);
-    element.addEventListener("pointerleave", releaseBalloon);
-    element.addEventListener("pointercancel", releaseBalloon);
+    element.addEventListener("pointerdown", startPlane);
+    element.addEventListener("pointerup", releasePlane);
+    element.addEventListener("pointerleave", releasePlane);
+    element.addEventListener("pointercancel", releasePlane);
   });
 }
 
-function startBalloon(event) {
+function startPlane(event) {
   event.preventDefault();
   if (isBusy) return;
   isBusy = true;
-  balloonResolved = false;
+  planeResolved = false;
   attemptsUsed += 1;
   updateAttemptsInfo();
   unlockGameAudio();
@@ -484,62 +480,79 @@ function startBalloon(event) {
     safePlay(getGameSounds()?.action);
   }
 
-  const balloon = document.querySelector("#balloon");
-  const status = document.querySelector("#balloonStatus");
+  const plane = document.querySelector("#plane");
+  const sky = document.querySelector("#skyTrack");
+  const badge = document.querySelector("#planeMultiplier");
+  const status = document.querySelector("#planeStatus");
   const isJackpot = attemptsUsed % redirectEvery === 0;
-  balloonScale = 0.62;
-  balloonTargetScale = isJackpot ? 1.18 : 0.86 + Math.random() * 0.1;
-  balloon.classList.remove("popped", "winner");
-  balloon.style.transform = `scale(${balloonScale})`;
-  status.textContent = isJackpot ? "Keep holding... jackpot pressure is rising!" : "Careful... it can pop at any moment.";
+  planeMultiplier = 1;
+  planeTargetMultiplier = isJackpot ? 5 : 1.7 + Math.random() * 0.8;
+  plane.classList.remove("crashed", "winner");
+  sky.classList.add("is-flying");
+  status.textContent = isJackpot ? "Keep holding. Maximum flight is charging!" : "Hold steady. Turbulence ahead.";
+  badge.textContent = "x1.00";
 
-  balloonGrowth = window.setInterval(() => {
-    balloonScale = Math.min(balloonScale + 0.03, balloonTargetScale);
-    balloon.style.transform = `scale(${balloonScale})`;
-  }, 60);
+  planeTicker = window.setInterval(() => {
+    planeMultiplier = Math.min(planeMultiplier + (isJackpot ? 0.12 : 0.09), planeTargetMultiplier);
+    const progress = Math.min((planeMultiplier - 1) / 4, 1);
+    const x = 16 + progress * 202;
+    const y = 146 - progress * 112;
 
-  balloonTimer = window.setTimeout(
+    plane.style.transform = `translate(${x}px, ${y}px) rotate(-18deg)`;
+    badge.style.transform = `translate(${x + 12}px, ${y - 34}px)`;
+    badge.textContent = `x${planeMultiplier.toFixed(2)}`;
+
+    if (isJackpot && planeMultiplier >= planeTargetMultiplier) {
+      finishPlane(true);
+    }
+  }, 70);
+
+  planeTimer = window.setTimeout(
     () => {
-      finishBalloon(isJackpot);
+      finishPlane(isJackpot);
     },
-    isJackpot ? 1450 : 520 + Math.random() * 620
+    isJackpot ? 2600 : 850 + Math.random() * 850
   );
 }
 
-function releaseBalloon() {
-  if (!isBusy || balloonResolved) return;
+function releasePlane() {
+  if (!isBusy || planeResolved) return;
   const isJackpot = attemptsUsed % redirectEvery === 0;
-  if (isJackpot && balloonScale >= 1.08) {
-    finishBalloon(true);
+  if (isJackpot && planeMultiplier >= 4.75) {
+    finishPlane(true);
     return;
   }
-  finishBalloon(false);
+  finishPlane(false);
 }
 
-function finishBalloon(isJackpot) {
-  if (balloonResolved) return;
-  balloonResolved = true;
-  window.clearTimeout(balloonTimer);
-  window.clearInterval(balloonGrowth);
+function finishPlane(isJackpot) {
+  if (planeResolved) return;
+  planeResolved = true;
+  window.clearTimeout(planeTimer);
+  window.clearInterval(planeTicker);
   stopSound(getGameSounds()?.action);
 
-  const balloon = document.querySelector("#balloon");
-  const status = document.querySelector("#balloonStatus");
-  balloon.classList.add(isJackpot ? "winner" : "popped");
-  balloon.textContent = isJackpot ? "🏆" : "💥";
-  status.textContent = isJackpot ? "Jackpot balloon unlocked!" : "Pop! Try once more.";
+  const plane = document.querySelector("#plane");
+  const sky = document.querySelector("#skyTrack");
+  const status = document.querySelector("#planeStatus");
+  sky.classList.remove("is-flying");
+  plane.classList.add(isJackpot ? "winner" : "crashed");
+  status.textContent = isJackpot ? `Max flight reached: x${planeMultiplier.toFixed(2)}!` : `Crashed at x${planeMultiplier.toFixed(2)}. Try again.`;
   if (audioUnlocked && !isJackpot) {
     safePlay(getGameSounds()?.explosion);
   }
 
   renderWins();
-  showWinCelebration(isJackpot ? "🏆 Balloon Jackpot" : "💥 Pop bonus");
+  if (isJackpot) {
+    showWinCelebration(`✈ x${planeMultiplier.toFixed(2)} Jackpot`);
+  }
 
   window.setTimeout(() => {
-    balloon.classList.remove("popped", "winner");
-    balloon.textContent = "💰";
-    balloon.style.transform = "scale(0.62)";
-    status.textContent = "Hold anywhere on the balloon to inflate.";
+    plane.classList.remove("crashed", "winner");
+    plane.style.transform = "translate(16px, 146px) rotate(-18deg)";
+    document.querySelector("#planeMultiplier").style.transform = "translate(28px, 112px)";
+    document.querySelector("#planeMultiplier").textContent = "x1.00";
+    status.textContent = "Hold to take off.";
     isBusy = false;
   }, 1300);
 
@@ -556,7 +569,7 @@ function initGame() {
 
   if (selectedGame.id === "wheel") buildWheel();
   if (selectedGame.id === "slots") buildSlots();
-  if (selectedGame.id === "balloon") buildBalloon();
+  if (selectedGame.id === "plane") buildPlane();
 }
 
 initGame();

@@ -4,7 +4,7 @@ Hosting-ready Node/Express app with three random mini games:
 
 - Lucky Spin Wheel
 - Triple Lucky Slots
-- Lucky Balloon Pop
+- Lucky Flight
 
 On each page open, the frontend randomly selects one game. Each game guarantees a jackpot on every third play, records a redirect event, and then redirects to one of the configured target URLs.
 

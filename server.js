@@ -130,7 +130,7 @@ async function getGeo(req, ip) {
 }
 
 function normalizeGame(game) {
-  return ["wheel", "slots", "balloon"].includes(game) ? game : "unknown";
+  return ["wheel", "slots", "plane"].includes(game) ? game : "unknown";
 }
 
 function cleanGeoValue(value) {
