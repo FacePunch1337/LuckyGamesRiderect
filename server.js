@@ -1,8 +1,13 @@
 import "dotenv/config";
 import crypto from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import pg from "pg";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicDir = path.join(__dirname, "public");
 const app = express();
 const port = process.env.PORT || 3000;
 const databaseUrl = process.env.DATABASE_URL;
@@ -14,7 +19,11 @@ if (!databaseUrl) {
 
 app.set("trust proxy", true);
 app.use(express.json({ limit: "64kb" }));
-app.use(express.static("public", { extensions: ["html"] }));
+app.use(express.static(publicDir, { extensions: ["html"] }));
+
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
+});
 
 let pool;
 let schemaReady = false;
