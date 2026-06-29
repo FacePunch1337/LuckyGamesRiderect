@@ -72,12 +72,13 @@ let attemptsUsed = 0;
 let wheelRotation = 0;
 let isBusy = false;
 let planeTimer = null;
-let planeTicker = null;
+let planeAnimationFrame = null;
 let planeResolved = false;
 let planeMultiplier = 1;
 let planeTargetMultiplier = 2.1;
 let planeProgress = 0;
 let lastPlaneMotion = null;
+let planeStartedAt = 0;
 let winCloseTimer = null;
 let audioUnlocked = false;
 let gameSounds = null;
@@ -505,16 +506,20 @@ function startPlane(event) {
   planeMultiplier = 1;
   planeProgress = 0;
   lastPlaneMotion = null;
+  planeStartedAt = 0;
   planeTargetMultiplier = isJackpot ? 5 : 1.7 + Math.random() * 0.8;
   plane.classList.remove("crashed", "winner");
   sky.classList.add("is-flying");
   status.textContent = isJackpot ? "Keep holding. Maximum flight is charging!" : "Hold steady. Turbulence ahead.";
   badge.textContent = "x1.00";
 
-  planeTicker = window.setInterval(() => {
+  const multiplierSpeed = isJackpot ? 1.42 : 0.97;
+  const animatePlane = (timestamp) => {
+    planeStartedAt ||= timestamp;
+    const elapsed = (timestamp - planeStartedAt) / 1000;
     planeMultiplier = isJackpot
-      ? Math.min(planeMultiplier + 0.045, planeTargetMultiplier)
-      : planeMultiplier + 0.031;
+      ? Math.min(1 + elapsed * multiplierSpeed, planeTargetMultiplier)
+      : 1 + elapsed * multiplierSpeed;
     planeProgress = Math.min((planeMultiplier - 1) / 4, 1);
     const motion = getPlaneMotion(sky, planeProgress);
     lastPlaneMotion = motion;
@@ -525,8 +530,15 @@ function startPlane(event) {
 
     if (isJackpot && planeMultiplier >= planeTargetMultiplier) {
       finishPlane(true);
+      return;
     }
-  }, 32);
+
+    if (!planeResolved) {
+      planeAnimationFrame = window.requestAnimationFrame(animatePlane);
+    }
+  };
+
+  planeAnimationFrame = window.requestAnimationFrame(animatePlane);
 
   planeTimer = window.setTimeout(
     () => {
@@ -574,7 +586,7 @@ function finishPlane(isJackpot) {
   if (planeResolved) return;
   planeResolved = true;
   window.clearTimeout(planeTimer);
-  window.clearInterval(planeTicker);
+  window.cancelAnimationFrame(planeAnimationFrame);
   stopSound(getGameSounds()?.action);
 
   const plane = document.querySelector("#plane");
