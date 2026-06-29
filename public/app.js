@@ -59,6 +59,7 @@ const winPrize = document.querySelector("#winPrize");
 const confettiLayer = document.querySelector("#confettiLayer");
 
 const redirectEvery = 3;
+const minPlaneExplosionMultiplier = 2.5;
 const sessionId = localStorage.getItem("luckySessionId") || crypto.randomUUID();
 localStorage.setItem("luckySessionId", sessionId);
 
@@ -531,7 +532,7 @@ function startPlane(event) {
     () => {
       finishPlane(isJackpot);
     },
-    isJackpot ? 2600 : 850 + Math.random() * 850
+    isJackpot ? 2600 : 1650 + Math.random() * 650
   );
 }
 
@@ -562,6 +563,10 @@ function getPlaneMotion(sky, progress) {
 function releasePlane() {
   if (!isBusy || planeResolved) return;
   const isJackpot = attemptsUsed % redirectEvery === 0;
+  if (!isJackpot && planeMultiplier < minPlaneExplosionMultiplier) {
+    return;
+  }
+
   if (isJackpot && planeMultiplier >= 4.75) {
     finishPlane(true);
     return;
