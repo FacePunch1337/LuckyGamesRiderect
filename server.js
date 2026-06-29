@@ -18,6 +18,7 @@ app.use(express.static("public", { extensions: ["html"] }));
 
 let pool;
 let schemaReady = false;
+let schemaPromise;
 
 async function getPool() {
   if (!databaseUrl) {
@@ -32,7 +33,8 @@ async function getPool() {
   }
 
   if (!schemaReady) {
-    await ensureSchema();
+    schemaPromise ||= ensureSchema();
+    await schemaPromise;
     schemaReady = true;
   }
 
