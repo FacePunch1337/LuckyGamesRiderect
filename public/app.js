@@ -46,6 +46,12 @@ const gameAudioFiles = {
     action: "/games/slots/assets/audio/spin.mp3",
     win: "/games/slots/assets/audio/win.mp3",
   },
+  balloon: {
+    background: "/games/balloon/assets/audio/background.mp3",
+    action: "/games/balloon/assets/audio/inflating.mp3",
+    explosion: "/games/balloon/assets/audio/explosion.mp3",
+    win: "/games/balloon/assets/audio/win.mp3",
+  },
 };
 
 const gameStage = document.querySelector("#gameStage");
@@ -96,10 +102,19 @@ function getGameSounds() {
     action: new Audio(files.action),
     win: new Audio(files.win),
   };
+  if (files.explosion) {
+    gameSounds.explosion = new Audio(files.explosion);
+  }
   gameSounds.background.loop = true;
+  if (selectedGame.id === "balloon") {
+    gameSounds.action.loop = true;
+  }
   gameSounds.background.volume = 0.32;
-  gameSounds.action.volume = 0.72;
+  gameSounds.action.volume = selectedGame.id === "balloon" ? 0.55 : 0.72;
   gameSounds.win.volume = 0.88;
+  if (gameSounds.explosion) {
+    gameSounds.explosion.volume = 0.9;
+  }
   Object.values(gameSounds).forEach((audio) => {
     audio.preload = "auto";
   });
@@ -112,6 +127,12 @@ function safePlay(audio) {
   audio.play().catch(() => {
     pendingMusicStart = true;
   });
+}
+
+function stopSound(audio) {
+  if (!audio) return;
+  audio.pause();
+  audio.currentTime = 0;
 }
 
 function unlockGameAudio() {
@@ -483,12 +504,16 @@ function finishBalloon(isJackpot) {
   balloonResolved = true;
   window.clearTimeout(balloonTimer);
   window.clearInterval(balloonGrowth);
+  stopSound(getGameSounds()?.action);
 
   const balloon = document.querySelector("#balloon");
   const status = document.querySelector("#balloonStatus");
   balloon.classList.add(isJackpot ? "winner" : "popped");
   balloon.textContent = isJackpot ? "🏆" : "💥";
   status.textContent = isJackpot ? "Jackpot balloon unlocked!" : "Pop! Try once more.";
+  if (audioUnlocked && !isJackpot) {
+    safePlay(getGameSounds()?.explosion);
+  }
 
   renderWins();
   showWinCelebration(isJackpot ? "🏆 Balloon Jackpot" : "💥 Pop bonus");
