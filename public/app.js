@@ -538,20 +538,20 @@ function getPlaneMotion(sky, progress) {
   const planeHeight = planeElement?.offsetHeight || 78;
   const t = Math.max(0, Math.min(progress, 1));
   const centerX = (width - planeWidth) / 2;
-  const amplitude = Math.min(36, width * 0.06);
-  const startY = height * 0.66;
-  const endY = height * 0.18;
-  const curve = Math.sin(t * Math.PI * 4.15 - Math.PI / 2);
-  const x = centerX + curve * amplitude;
-  const y = startY + (endY - startY) * t;
-  const dx = Math.cos(t * Math.PI * 4.15 - Math.PI / 2) * Math.PI * 4.15 * amplitude;
-  const dy = endY - startY;
+  const centerY = (height - planeHeight) / 2;
+  const amplitudeY = Math.min(42, height * 0.12);
+  const phase = t * Math.PI * 5.2;
+  const x = centerX;
+  const y = centerY + Math.sin(phase) * amplitudeY;
+  const virtualForwardSpeed = width * 0.42;
+  const dy = Math.cos(phase) * Math.PI * 5.2 * amplitudeY;
+  const dx = virtualForwardSpeed;
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
   return {
     x: Math.round(Math.max(16, Math.min(width - planeWidth - 16, x))),
     y: Math.round(Math.max(18, Math.min(height - planeHeight - 18, y))),
-    angle: Math.round(Math.max(-118, Math.min(-62, angle))),
+    angle: Math.round(Math.max(-34, Math.min(34, angle))),
     badgeX: Math.round(Math.max(14, Math.min(width - 86, x + planeWidth * 0.35))),
     badgeY: Math.round(Math.max(12, Math.min(height - 42, y - 40))),
   };
