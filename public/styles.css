@@ -103,6 +103,22 @@ h1 {
   font-weight: 700;
 }
 
+.attempts-info {
+  width: fit-content;
+  max-width: 100%;
+  margin: 12px auto 0;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 218, 106, 0.34);
+  border-radius: 999px;
+  background: rgba(16, 14, 46, 0.74);
+  color: #ffe87d;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 0 18px rgba(255, 189, 32, 0.12);
+}
+
 .game-stage {
   min-height: 415px;
   display: grid;

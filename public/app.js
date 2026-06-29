@@ -58,6 +58,7 @@ const gameStage = document.querySelector("#gameStage");
 const title = document.querySelector("#app-title");
 const eyebrow = document.querySelector("#gameEyebrow");
 const subtitle = document.querySelector("#gameSubtitle");
+const attemptsInfo = document.querySelector("#attemptsInfo");
 const winsList = document.querySelector("#winsList");
 const winOverlay = document.querySelector("#winOverlay");
 const winPrize = document.querySelector("#winPrize");
@@ -226,6 +227,12 @@ function renderWins() {
   winsList.innerHTML = rows.join("");
 }
 
+function updateAttemptsInfo() {
+  const mod = attemptsUsed % redirectEvery;
+  const remaining = attemptsUsed > 0 && mod === 0 ? 0 : redirectEvery - mod;
+  attemptsInfo.textContent = `Attempts left: ${remaining}/${redirectEvery}`;
+}
+
 function launchConfetti() {
   confettiLayer.innerHTML = "";
   Array.from({ length: 180 }, (_, index) => {
@@ -306,6 +313,7 @@ function playWheel() {
   if (isBusy) return;
   isBusy = true;
   attemptsUsed += 1;
+  updateAttemptsInfo();
   unlockGameAudio();
 
   const wheel = document.querySelector("#wheel");
@@ -358,7 +366,7 @@ function buildSlots() {
           .join("")}
       </div>
       <div class="slot-lever" aria-hidden="true"><span></span></div>
-      <div class="payline">Match 3 symbols to unlock the jackpot</div>
+      <div class="payline" id="slotMessage">Match 3 symbols to unlock the jackpot</div>
     </div>
     <button class="spin-button" id="gameButton" type="button">Pull Lever</button>
   `;
@@ -369,10 +377,12 @@ function playSlots() {
   if (isBusy) return;
   isBusy = true;
   attemptsUsed += 1;
+  updateAttemptsInfo();
 
   const machine = document.querySelector("#slotMachine");
   const reels = [...document.querySelectorAll(".reel-window")];
   const button = document.querySelector("#gameButton");
+  const message = document.querySelector("#slotMessage");
   const isJackpot = attemptsUsed % redirectEvery === 0;
   const result = isJackpot
     ? ["7️⃣", "7️⃣", "7️⃣"]
@@ -380,6 +390,7 @@ function playSlots() {
 
   button.disabled = true;
   button.textContent = "Rolling...";
+  message.textContent = "Reels are spinning...";
   unlockGameAudio();
   if (audioUnlocked) {
     safePlay(getGameSounds()?.action);
@@ -417,8 +428,11 @@ function playSlots() {
     machine.classList.remove("slot-spinning");
     if (isJackpot) {
       machine.classList.add("slot-win");
+      message.textContent = "Triple 7 jackpot unlocked!";
+      showWinCelebration("🏆 Triple 7 Jackpot");
+    } else {
+      message.textContent = "No match. Try again.";
     }
-    showWinCelebration(isJackpot ? "🏆 Triple 7 Jackpot" : `${result.join(" ")} Bonus try`);
     button.disabled = false;
     button.textContent = "Pull Lever";
     isBusy = false;
@@ -464,6 +478,7 @@ function startBalloon(event) {
   isBusy = true;
   balloonResolved = false;
   attemptsUsed += 1;
+  updateAttemptsInfo();
   unlockGameAudio();
   if (audioUnlocked) {
     safePlay(getGameSounds()?.action);
@@ -536,6 +551,7 @@ function finishBalloon(isJackpot) {
 function initGame() {
   setHeader();
   renderWins();
+  updateAttemptsInfo();
   track("/api/analytics/page-view", { game: selectedGame.id });
 
   if (selectedGame.id === "wheel") buildWheel();
