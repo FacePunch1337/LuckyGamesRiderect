@@ -548,15 +548,13 @@ function getPlaneMotion(sky, progress) {
   const phase = t * Math.PI * 6.4;
   const x = centerX;
   const y = centerY;
-  const baseAngle = -28;
-  const curveForwardSpeed = width * 0.52;
-  const curveLift = -Math.cos(phase) * Math.PI * 6.4 * Math.min(24, height * 0.065);
-  const pitch = Math.atan2(curveLift, curveForwardSpeed) * (180 / Math.PI);
+  const baseAngle = -30;
+  const pitch = -Math.cos(phase) * 10;
 
   return {
     x: Math.round(Math.max(16, Math.min(width - planeWidth - 16, x))),
     y: Math.round(Math.max(18, Math.min(height - planeHeight - 18, y))),
-    angle: Math.round(Math.max(-46, Math.min(-10, baseAngle + pitch))),
+    angle: Math.round(baseAngle + pitch),
     badgeX: Math.round(Math.max(14, Math.min(width - 86, x + planeWidth * 0.35))),
     badgeY: Math.round(Math.max(12, Math.min(height - 42, y - 40))),
   };
