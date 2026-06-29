@@ -79,9 +79,10 @@ body.theme-wheel::after {
     radial-gradient(ellipse at 8% -12%, rgba(255, 183, 219, 0.32) 0 4rem, transparent 13rem),
     radial-gradient(ellipse at 92% -12%, rgba(255, 183, 219, 0.32) 0 4rem, transparent 13rem),
     url("/games/wheel/assets/images/sakura-frame.svg") center top / 100vw auto no-repeat,
-    radial-gradient(ellipse at 12% -10%, rgba(255, 201, 232, 0.95) 0 0.34rem, transparent 0.38rem) 0 0 / 260px 320px,
-    radial-gradient(ellipse at 65% -8%, rgba(255, 143, 198, 0.72) 0 0.28rem, transparent 0.32rem) 0 0 / 340px 420px;
-  animation: sakuraPetalsFall 12s linear infinite;
+    radial-gradient(ellipse at 12% 4%, rgba(255, 215, 238, 0.95) 0 0.48rem, transparent 0.52rem) 0 -260px / 220px 260px,
+    radial-gradient(ellipse at 62% 8%, rgba(255, 142, 197, 0.86) 0 0.38rem, transparent 0.42rem) 80px -340px / 280px 340px,
+    radial-gradient(ellipse at 32% 6%, rgba(255, 234, 246, 0.9) 0 0.34rem, transparent 0.38rem) 160px -420px / 360px 420px;
+  animation: sakuraPetalsFall 6.5s linear infinite;
 }
 
 body.theme-slots {
@@ -1494,16 +1495,27 @@ h2 {
       center top,
       center top,
       center top,
-      0 -320px,
-      120px -420px;
+      0 -260px,
+      80px -340px,
+      160px -420px;
+  }
+  50% {
+    background-position:
+      center top,
+      center top,
+      center top,
+      48px 38vh,
+      16px 28vh,
+      220px 44vh;
   }
   100% {
     background-position:
       center top,
       center top,
       center top,
-      90px 100vh,
-      -80px 100vh;
+      120px 106vh,
+      -90px 104vh,
+      280px 108vh;
   }
 }
 

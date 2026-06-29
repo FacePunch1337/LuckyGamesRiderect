@@ -1,110 +1,99 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMin meet">
   <defs>
-    <radialGradient id="petal" cx="40%" cy="28%" r="76%">
-      <stop offset="0" stop-color="#fff8ff"/>
-      <stop offset="0.48" stop-color="#ffc4df"/>
-      <stop offset="1" stop-color="#ed6fa9"/>
+    <radialGradient id="petal" cx="38%" cy="28%" r="78%">
+      <stop offset="0" stop-color="#fffaff"/>
+      <stop offset="0.42" stop-color="#ffd2e8"/>
+      <stop offset="0.78" stop-color="#f78bbb"/>
+      <stop offset="1" stop-color="#d94f91"/>
     </radialGradient>
     <linearGradient id="bark" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8a4930"/>
-      <stop offset="0.45" stop-color="#4a1c22"/>
+      <stop offset="0" stop-color="#9b5737"/>
+      <stop offset="0.52" stop-color="#4b1e25"/>
       <stop offset="1" stop-color="#16070f"/>
     </linearGradient>
-    <linearGradient id="barkHighlight" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#c78258" stop-opacity="0.72"/>
-      <stop offset="1" stop-color="#4a1c22" stop-opacity="0"/>
+    <linearGradient id="barkLight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d99a63" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#5b2225" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#c8e887"/>
-      <stop offset="0.72" stop-color="#65a64b"/>
+      <stop offset="0" stop-color="#d9f68f"/>
+      <stop offset="0.66" stop-color="#73ba55"/>
       <stop offset="1" stop-color="#315f3c"/>
     </linearGradient>
-    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ff8fc9" flood-opacity="0.32"/>
+    <filter id="flowerGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ff9cca" flood-opacity="0.44"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#1b0613" flood-opacity="0.28"/>
     </filter>
-    <g id="blossom" filter="url(#softGlow)">
-      <ellipse cx="0" cy="-14" rx="8" ry="17" fill="url(#petal)"/>
-      <ellipse cx="13" cy="-4" rx="8" ry="17" fill="url(#petal)" transform="rotate(72)"/>
-      <ellipse cx="8" cy="12" rx="8" ry="17" fill="url(#petal)" transform="rotate(144)"/>
-      <ellipse cx="-8" cy="12" rx="8" ry="17" fill="url(#petal)" transform="rotate(216)"/>
-      <ellipse cx="-13" cy="-4" rx="8" ry="17" fill="url(#petal)" transform="rotate(288)"/>
-      <circle r="5" fill="#ffd966"/>
-      <circle r="2" fill="#9b4a24"/>
+    <g id="blossom" filter="url(#flowerGlow)">
+      <ellipse cx="0" cy="-15" rx="10" ry="18" fill="url(#petal)"/>
+      <ellipse cx="14" cy="-5" rx="10" ry="18" fill="url(#petal)" transform="rotate(72)"/>
+      <ellipse cx="9" cy="12" rx="10" ry="18" fill="url(#petal)" transform="rotate(144)"/>
+      <ellipse cx="-9" cy="12" rx="10" ry="18" fill="url(#petal)" transform="rotate(216)"/>
+      <ellipse cx="-14" cy="-5" rx="10" ry="18" fill="url(#petal)" transform="rotate(288)"/>
+      <circle r="5.5" fill="#ffd64d"/>
+      <circle r="2.2" fill="#984327"/>
+    </g>
+    <g id="smallBlossom" filter="url(#flowerGlow)">
+      <ellipse cx="0" cy="-10" rx="7" ry="12" fill="url(#petal)"/>
+      <ellipse cx="9" cy="-3" rx="7" ry="12" fill="url(#petal)" transform="rotate(72)"/>
+      <ellipse cx="6" cy="8" rx="7" ry="12" fill="url(#petal)" transform="rotate(144)"/>
+      <ellipse cx="-6" cy="8" rx="7" ry="12" fill="url(#petal)" transform="rotate(216)"/>
+      <ellipse cx="-9" cy="-3" rx="7" ry="12" fill="url(#petal)" transform="rotate(288)"/>
+      <circle r="3.8" fill="#ffd64d"/>
     </g>
     <g id="leafPair">
-      <ellipse cx="-8" cy="0" rx="5" ry="16" fill="url(#leaf)" transform="rotate(-35)"/>
-      <ellipse cx="8" cy="0" rx="5" ry="16" fill="url(#leaf)" transform="rotate(35)"/>
-    </g>
-    <g id="petals">
-      <ellipse cx="0" cy="0" rx="8" ry="4" fill="#ffd1e8" transform="rotate(-24)"/>
-      <ellipse cx="44" cy="22" rx="6" ry="3.5" fill="#ff92c1" transform="rotate(32)"/>
-      <ellipse cx="82" cy="-12" rx="7" ry="4" fill="#ffc0de" transform="rotate(-6)"/>
+      <ellipse cx="-8" cy="0" rx="5.5" ry="16" fill="url(#leaf)" transform="rotate(-34)"/>
+      <ellipse cx="8" cy="0" rx="5.5" ry="16" fill="url(#leaf)" transform="rotate(34)"/>
     </g>
   </defs>
 
   <g opacity="0.98">
-    <path d="M-86 260 C58 198 126 144 245 82 C360 22 472 -2 610 -48" fill="none" stroke="url(#bark)" stroke-width="28" stroke-linecap="round"/>
-    <path d="M-62 251 C78 196 148 144 265 91 C380 42 486 20 596 -14" fill="none" stroke="url(#barkHighlight)" stroke-width="9" stroke-linecap="round" opacity="0.8"/>
-    <path d="M34 224 C118 284 206 326 342 366" fill="none" stroke="url(#bark)" stroke-width="17" stroke-linecap="round"/>
-    <path d="M74 210 C145 236 194 254 250 294" fill="none" stroke="url(#bark)" stroke-width="9" stroke-linecap="round"/>
-    <path d="M162 132 C230 176 304 180 404 145" fill="none" stroke="url(#bark)" stroke-width="13" stroke-linecap="round"/>
-    <path d="M258 72 C344 106 414 106 508 70" fill="none" stroke="url(#bark)" stroke-width="11" stroke-linecap="round"/>
-    <path d="M360 28 C416 50 466 48 536 22" fill="none" stroke="url(#bark)" stroke-width="8" stroke-linecap="round"/>
-    <path d="M-20 58 C78 72 160 58 252 22" fill="none" stroke="url(#bark)" stroke-width="14" stroke-linecap="round"/>
-    <path d="M36 86 C114 110 208 102 300 72" fill="none" stroke="url(#bark)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M-24 148 C96 96 194 66 322 40 C448 14 550 2 660 -34" fill="none" stroke="url(#bark)" stroke-width="19" stroke-linecap="round"/>
+    <path d="M-12 140 C108 94 204 66 326 45 C444 24 544 12 648 -20" fill="none" stroke="url(#barkLight)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M20 190 C116 198 214 180 330 132 C430 92 518 72 616 62" fill="none" stroke="url(#bark)" stroke-width="13" stroke-linecap="round"/>
+    <path d="M42 254 C126 226 208 238 306 280" fill="none" stroke="url(#bark)" stroke-width="12" stroke-linecap="round"/>
+    <path d="M102 98 C170 128 248 122 338 84" fill="none" stroke="url(#bark)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M238 44 C316 74 390 70 476 36" fill="none" stroke="url(#bark)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M360 24 C418 44 476 40 548 16" fill="none" stroke="url(#bark)" stroke-width="6" stroke-linecap="round"/>
 
-    <g transform="translate(82 205) rotate(-12) scale(1.22)"><use href="#blossom"/></g>
-    <g transform="translate(54 70) rotate(12) scale(0.68)"><use href="#blossom"/></g>
-    <g transform="translate(132 62) rotate(-18) scale(0.74)"><use href="#blossom"/></g>
-    <g transform="translate(146 158) rotate(18) scale(0.8)"><use href="#blossom"/></g>
-    <g transform="translate(196 122) rotate(22) scale(0.96)"><use href="#blossom"/></g>
-    <g transform="translate(274 96) rotate(-28) scale(1.05)"><use href="#blossom"/></g>
-    <g transform="translate(362 146) rotate(8) scale(0.88)"><use href="#blossom"/></g>
-    <g transform="translate(458 68) rotate(24) scale(0.78)"><use href="#blossom"/></g>
-    <g transform="translate(535 24) rotate(-8) scale(0.66)"><use href="#blossom"/></g>
-    <g transform="translate(282 342) rotate(-18) scale(0.82)"><use href="#blossom"/></g>
-    <g transform="translate(198 280) rotate(15) scale(0.64)"><use href="#blossom"/></g>
-    <g transform="translate(126 182) rotate(18)"><use href="#leafPair"/></g>
-    <g transform="translate(94 72) rotate(-8)"><use href="#leafPair"/></g>
-    <g transform="translate(214 42) rotate(20)"><use href="#leafPair"/></g>
-    <g transform="translate(235 110) rotate(-18)"><use href="#leafPair"/></g>
-    <g transform="translate(324 84) rotate(-12)"><use href="#leafPair"/></g>
-    <g transform="translate(395 138) rotate(20)"><use href="#leafPair"/></g>
+    <g transform="translate(54 176) rotate(-18) scale(1.06)"><use href="#blossom"/></g>
+    <g transform="translate(124 142) rotate(10) scale(0.9)"><use href="#blossom"/></g>
+    <g transform="translate(214 118) rotate(-12) scale(1.12)"><use href="#blossom"/></g>
+    <g transform="translate(312 76) rotate(16) scale(0.82)"><use href="#blossom"/></g>
+    <g transform="translate(428 36) rotate(-18) scale(0.68)"><use href="#smallBlossom"/></g>
+    <g transform="translate(520 66) rotate(10) scale(0.78)"><use href="#smallBlossom"/></g>
+    <g transform="translate(196 258) rotate(-18) scale(0.72)"><use href="#smallBlossom"/></g>
+    <g transform="translate(292 282) rotate(18) scale(0.86)"><use href="#blossom"/></g>
+
+    <g transform="translate(88 164) rotate(-18)"><use href="#leafPair"/></g>
+    <g transform="translate(174 126) rotate(14)"><use href="#leafPair"/></g>
+    <g transform="translate(274 92) rotate(-12)"><use href="#leafPair"/></g>
+    <g transform="translate(384 44) rotate(20)"><use href="#leafPair"/></g>
+    <g transform="translate(266 244) rotate(-18)"><use href="#leafPair"/></g>
   </g>
 
   <g transform="translate(1600 0) scale(-1 1)" opacity="0.98">
-    <path d="M-94 286 C56 214 146 150 276 96 C398 44 504 24 640 -36" fill="none" stroke="url(#bark)" stroke-width="30" stroke-linecap="round"/>
-    <path d="M-66 275 C72 216 166 158 294 108 C412 62 512 38 626 -6" fill="none" stroke="url(#barkHighlight)" stroke-width="9" stroke-linecap="round" opacity="0.78"/>
-    <path d="M42 242 C134 302 232 344 372 384" fill="none" stroke="url(#bark)" stroke-width="17" stroke-linecap="round"/>
-    <path d="M86 228 C156 252 212 274 278 318" fill="none" stroke="url(#bark)" stroke-width="9" stroke-linecap="round"/>
-    <path d="M184 150 C250 192 326 196 420 164" fill="none" stroke="url(#bark)" stroke-width="13" stroke-linecap="round"/>
-    <path d="M306 86 C388 118 462 120 550 92" fill="none" stroke="url(#bark)" stroke-width="11" stroke-linecap="round"/>
-    <path d="M426 48 C482 68 530 66 596 42" fill="none" stroke="url(#bark)" stroke-width="8" stroke-linecap="round"/>
-    <path d="M-16 62 C88 78 172 60 268 24" fill="none" stroke="url(#bark)" stroke-width="14" stroke-linecap="round"/>
-    <path d="M42 92 C128 118 222 108 318 76" fill="none" stroke="url(#bark)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M-24 148 C96 96 194 66 322 40 C448 14 550 2 660 -34" fill="none" stroke="url(#bark)" stroke-width="19" stroke-linecap="round"/>
+    <path d="M-12 140 C108 94 204 66 326 45 C444 24 544 12 648 -20" fill="none" stroke="url(#barkLight)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M20 190 C116 198 214 180 330 132 C430 92 518 72 616 62" fill="none" stroke="url(#bark)" stroke-width="13" stroke-linecap="round"/>
+    <path d="M42 254 C126 226 208 238 306 280" fill="none" stroke="url(#bark)" stroke-width="12" stroke-linecap="round"/>
+    <path d="M102 98 C170 128 248 122 338 84" fill="none" stroke="url(#bark)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M238 44 C316 74 390 70 476 36" fill="none" stroke="url(#bark)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M360 24 C418 44 476 40 548 16" fill="none" stroke="url(#bark)" stroke-width="6" stroke-linecap="round"/>
 
-    <g transform="translate(96 224) rotate(-12) scale(1.18)"><use href="#blossom"/></g>
-    <g transform="translate(60 76) rotate(12) scale(0.68)"><use href="#blossom"/></g>
-    <g transform="translate(146 66) rotate(-18) scale(0.74)"><use href="#blossom"/></g>
-    <g transform="translate(170 174) rotate(18) scale(0.82)"><use href="#blossom"/></g>
-    <g transform="translate(224 138) rotate(22) scale(0.98)"><use href="#blossom"/></g>
-    <g transform="translate(310 112) rotate(-28) scale(1.02)"><use href="#blossom"/></g>
-    <g transform="translate(396 166) rotate(8) scale(0.86)"><use href="#blossom"/></g>
-    <g transform="translate(496 86) rotate(24) scale(0.76)"><use href="#blossom"/></g>
-    <g transform="translate(590 44) rotate(-8) scale(0.66)"><use href="#blossom"/></g>
-    <g transform="translate(316 364) rotate(-18) scale(0.82)"><use href="#blossom"/></g>
-    <g transform="translate(150 202) rotate(18)"><use href="#leafPair"/></g>
-    <g transform="translate(100 78) rotate(-8)"><use href="#leafPair"/></g>
-    <g transform="translate(232 46) rotate(20)"><use href="#leafPair"/></g>
-    <g transform="translate(260 128) rotate(-18)"><use href="#leafPair"/></g>
-    <g transform="translate(356 100) rotate(-12)"><use href="#leafPair"/></g>
-    <g transform="translate(430 158) rotate(20)"><use href="#leafPair"/></g>
-  </g>
+    <g transform="translate(54 176) rotate(-18) scale(1.06)"><use href="#blossom"/></g>
+    <g transform="translate(124 142) rotate(10) scale(0.9)"><use href="#blossom"/></g>
+    <g transform="translate(214 118) rotate(-12) scale(1.12)"><use href="#blossom"/></g>
+    <g transform="translate(312 76) rotate(16) scale(0.82)"><use href="#blossom"/></g>
+    <g transform="translate(428 36) rotate(-18) scale(0.68)"><use href="#smallBlossom"/></g>
+    <g transform="translate(520 66) rotate(10) scale(0.78)"><use href="#smallBlossom"/></g>
+    <g transform="translate(196 258) rotate(-18) scale(0.72)"><use href="#smallBlossom"/></g>
+    <g transform="translate(292 282) rotate(18) scale(0.86)"><use href="#blossom"/></g>
 
-  <g opacity="0.72">
-    <use href="#petals" x="235" y="500"/>
-    <use href="#petals" x="1220" y="468" transform="scale(0.9) rotate(16 1220 468)"/>
-    <use href="#petals" x="250" y="690" transform="scale(0.78) rotate(-18 250 690)"/>
-    <use href="#petals" x="1325" y="650" transform="scale(0.82) rotate(22 1325 650)"/>
+    <g transform="translate(88 164) rotate(-18)"><use href="#leafPair"/></g>
+    <g transform="translate(174 126) rotate(14)"><use href="#leafPair"/></g>
+    <g transform="translate(274 92) rotate(-12)"><use href="#leafPair"/></g>
+    <g transform="translate(384 44) rotate(20)"><use href="#leafPair"/></g>
+    <g transform="translate(266 244) rotate(-18)"><use href="#leafPair"/></g>
   </g>
 </svg>
