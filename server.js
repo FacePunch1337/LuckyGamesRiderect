@@ -11,7 +11,7 @@ const publicDir = path.join(__dirname, "public");
 const app = express();
 const port = process.env.PORT || 3000;
 const databaseUrl = process.env.DATABASE_URL;
-const adminPassword = process.env.ADMIN_PASSWORD || "";
+const adminPassword = process.env.ADMIN_PASSWORD || "admin";
 
 if (!databaseUrl) {
   console.warn("DATABASE_URL is not set. Analytics routes will return a database configuration error.");
