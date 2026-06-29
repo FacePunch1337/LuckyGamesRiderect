@@ -608,24 +608,27 @@ h1 {
   top: 0;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  color: #ffffff;
-  font-size: 46px;
-  line-height: 1;
-  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.28), 0 0 20px rgba(49, 208, 255, 0.58);
-  transform: translate(136px, 104px) rotate(-8deg);
+  width: 126px;
+  height: 78px;
+  transform: translate(126px, 82px) rotate(-24deg);
   transition: transform 0.08s linear;
+  filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.28)) drop-shadow(0 0 18px rgba(49, 208, 255, 0.52));
+}
+
+.plane img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
 }
 
 .plane.crashed {
-  color: #ff4d6d;
   animation: planeCrash 0.72s ease-in forwards;
 }
 
 .plane.winner {
-  color: #ffe87d;
   animation: planeWin 0.52s ease-in-out infinite alternate;
 }
 
@@ -1070,9 +1073,9 @@ h2 {
 }
 
 @keyframes planeCrash {
-  0% { transform: translate(136px, 104px) rotate(-8deg); opacity: 1; }
-  55% { transform: translate(128px, 136px) rotate(28deg); opacity: 1; }
-  100% { transform: translate(116px, 178px) rotate(76deg); opacity: 0.35; }
+  0% { transform: translate(126px, 82px) rotate(-24deg); opacity: 1; }
+  55% { transform: translate(118px, 128px) rotate(18deg); opacity: 1; }
+  100% { transform: translate(106px, 170px) rotate(64deg); opacity: 0.35; }
 }
 
 @keyframes planeWin {

@@ -451,7 +451,9 @@ function buildPlane() {
         <div class="cloud cloud-2"></div>
         <div class="cloud cloud-3"></div>
         <div class="multiplier-badge" id="planeMultiplier">x1.00</div>
-        <div class="plane" id="plane">✈</div>
+        <div class="plane" id="plane">
+          <img src="/games/plane/assets/images/plane-cropped.png" alt="Plane" draggable="false">
+        </div>
       </div>
       <p class="plane-status" id="planeStatus">Hold to take off.</p>
     </div>
@@ -496,7 +498,7 @@ function startPlane(event) {
     planeMultiplier = Math.min(planeMultiplier + (isJackpot ? 0.12 : 0.09), planeTargetMultiplier);
     const bob = Math.sin(planeMultiplier * 5.2) * 10;
 
-    plane.style.transform = `translate(136px, ${104 + bob}px) rotate(-8deg)`;
+    plane.style.transform = `translate(126px, ${82 + bob}px) rotate(-24deg)`;
     badge.style.transform = `translate(142px, ${64 + bob}px)`;
     badge.textContent = `x${planeMultiplier.toFixed(2)}`;
 
@@ -547,7 +549,7 @@ function finishPlane(isJackpot) {
 
   window.setTimeout(() => {
     plane.classList.remove("crashed", "winner");
-    plane.style.transform = "translate(136px, 104px) rotate(-8deg)";
+    plane.style.transform = "translate(126px, 82px) rotate(-24deg)";
     document.querySelector("#planeMultiplier").style.transform = "translate(142px, 64px)";
     document.querySelector("#planeMultiplier").textContent = "x1.00";
     status.textContent = "Hold to take off.";
