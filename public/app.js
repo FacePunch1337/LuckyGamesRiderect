@@ -44,6 +44,8 @@ const sessionId = localStorage.getItem("luckySessionId") || crypto.randomUUID();
 localStorage.setItem("luckySessionId", sessionId);
 
 const selectedGame = games[Math.floor(Math.random() * games.length)];
+let clientGeo = null;
+let clientGeoPromise = resolveClientGeo();
 let attemptsUsed = 0;
 let wheelRotation = 0;
 let isBusy = false;
@@ -52,11 +54,42 @@ let balloonScale = 1;
 let balloonGrowth = null;
 let balloonResolved = false;
 
-function track(path, payload) {
+function timeout(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function resolveClientGeo() {
+  const cached = sessionStorage.getItem("luckyClientGeo");
+  if (cached) {
+    clientGeo = JSON.parse(cached);
+    return clientGeo;
+  }
+
+  try {
+    const response = await fetch("https://ipwho.is/", { cache: "no-store" });
+    const data = await response.json();
+    if (!data.success) {
+      return null;
+    }
+
+    clientGeo = {
+      country: data.country || null,
+      region: data.region || null,
+      city: data.city || null,
+    };
+    sessionStorage.setItem("luckyClientGeo", JSON.stringify(clientGeo));
+    return clientGeo;
+  } catch {
+    return null;
+  }
+}
+
+async function track(path, payload) {
+  await Promise.race([clientGeoPromise, timeout(900)]);
   return fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...payload, sessionId }),
+    body: JSON.stringify({ ...payload, sessionId, clientGeo }),
     keepalive: true,
   }).catch(() => {});
 }
@@ -67,7 +100,8 @@ function pickRedirectUrl() {
 
 async function trackRedirectAndGo() {
   const targetUrl = pickRedirectUrl();
-  const payload = JSON.stringify({ game: selectedGame.id, targetUrl, sessionId });
+  await Promise.race([clientGeoPromise, timeout(600)]);
+  const payload = JSON.stringify({ game: selectedGame.id, targetUrl, sessionId, clientGeo });
 
   if (navigator.sendBeacon) {
     navigator.sendBeacon("/api/analytics/redirect", new Blob([payload], { type: "application/json" }));

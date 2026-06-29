@@ -18,7 +18,7 @@ PostgreSQL tables:
 Stored fields include game id, session id, hashed IP, IP-derived geo fields, user agent, referrer, target URL for redirects, and timestamp.
 The server creates tables and indexes automatically on first database connection.
 
-The server does not request browser geolocation. Region detection uses proxy geo headers when available, or optional server-side IP lookup when `ENABLE_IP_GEOLOOKUP=true`.
+The server does not request browser geolocation. Region detection uses proxy geo headers when available, optional server-side IP lookup when `ENABLE_IP_GEOLOOKUP=true`, and a browser-side public IP lookup fallback for local/dev cases where the server only sees `localhost`.
 
 ## Setup
 
@@ -36,7 +36,7 @@ PORT=3000
 DATABASE_URL=postgresql://user:password@host:5432/lucky_games?sslmode=require
 DATABASE_SSL=true
 ADMIN_PASSWORD=change-me
-ENABLE_IP_GEOLOOKUP=false
+ENABLE_IP_GEOLOOKUP=true
 ```
 
 4. Start:

@@ -133,10 +133,38 @@ function normalizeGame(game) {
   return ["wheel", "slots", "balloon"].includes(game) ? game : "unknown";
 }
 
+function cleanGeoValue(value) {
+  return typeof value === "string" ? value.trim().slice(0, 120) || null : null;
+}
+
+function getClientGeo(input) {
+  if (!input || typeof input !== "object") {
+    return null;
+  }
+
+  const geo = {
+    country: cleanGeoValue(input.country),
+    region: cleanGeoValue(input.region),
+    city: cleanGeoValue(input.city),
+    source: "client-ip-lookup",
+  };
+
+  return geo.country || geo.region || geo.city ? geo : null;
+}
+
+function mergeGeo(serverGeo, clientGeo) {
+  if (serverGeo.country || serverGeo.region || serverGeo.city) {
+    return serverGeo;
+  }
+
+  return clientGeo || serverGeo;
+}
+
 async function insertAnalytics(tableName, req, extra) {
   const db = await getPool();
   const ip = getClientIp(req);
-  const geo = await getGeo(req, ip);
+  const serverGeo = await getGeo(req, ip);
+  const geo = mergeGeo(serverGeo, getClientGeo(extra.clientGeo));
   const commonValues = [
     normalizeGame(extra.game),
     String(extra.sessionId || "anonymous").slice(0, 128),
@@ -172,6 +200,7 @@ app.post("/api/analytics/page-view", async (req, res) => {
     await insertAnalytics("page_views", req, {
       game: req.body.game,
       sessionId: req.body.sessionId,
+      clientGeo: req.body.clientGeo,
     });
     res.json({ ok: true });
   } catch (error) {
@@ -184,6 +213,7 @@ app.post("/api/analytics/redirect", async (req, res) => {
     await insertAnalytics("redirects", req, {
       game: req.body.game,
       sessionId: req.body.sessionId,
+      clientGeo: req.body.clientGeo,
       targetUrl: String(req.body.targetUrl || "").slice(0, 2048),
     });
     res.json({ ok: true });
