@@ -28,6 +28,7 @@ const games = [
 const wheelPrizes = ["Jackpot", "Gift", "Cashback", "Promo code", "25% Discount", "Surprise", "500 Points", "Free Spin"];
 const wheelIcons = ["🏆", "🎁", "💸", "🎟️", "⭐", "🍋", "🔑", "🎰"];
 const slotSymbols = ["7️⃣", "💎", "🍒", "🔔", "⭐", "🍋"];
+const slotStripSymbols = [...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols];
 const names = ["William", "Olivia", "James", "Sarah", "Henry", "Emma"];
 
 const gameStage = document.querySelector("#gameStage");
@@ -43,7 +44,8 @@ const redirectEvery = 3;
 const sessionId = localStorage.getItem("luckySessionId") || crypto.randomUUID();
 localStorage.setItem("luckySessionId", sessionId);
 
-const selectedGame = games[Math.floor(Math.random() * games.length)];
+const requestedGame = new URLSearchParams(window.location.search).get("game");
+const selectedGame = games.find((game) => game.id === requestedGame) || games[Math.floor(Math.random() * games.length)];
 let clientGeo = null;
 let clientGeoPromise = resolveClientGeo();
 let attemptsUsed = 0;
@@ -223,13 +225,28 @@ function playWheel() {
 
 function buildSlots() {
   gameStage.innerHTML = `
-    <div class="slot-machine">
+    <div class="slot-machine" id="slotMachine">
       <div class="slot-lights"></div>
-      <div class="reels" id="reels">
-        <div class="reel">7️⃣</div>
-        <div class="reel">💎</div>
-        <div class="reel">🍒</div>
+      <div class="slot-top">
+        <span>Lucky</span>
+        <strong>777</strong>
+        <span>Jackpot</span>
       </div>
+      <div class="reels" id="reels">
+        ${[0, 1, 2]
+          .map(
+            (index) => `
+              <div class="reel-window" data-reel="${index}">
+                <div class="reel-strip">
+                  ${slotStripSymbols.map((symbol) => `<span>${symbol}</span>`).join("")}
+                </div>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+      <div class="slot-payline" aria-hidden="true"></div>
+      <div class="slot-lever" aria-hidden="true"><span></span></div>
       <div class="payline">Match 3 symbols to unlock the jackpot</div>
     </div>
     <button class="spin-button" id="gameButton" type="button">Pull Lever</button>
@@ -242,29 +259,66 @@ function playSlots() {
   isBusy = true;
   attemptsUsed += 1;
 
-  const reels = [...document.querySelectorAll(".reel")];
+  const machine = document.querySelector("#slotMachine");
+  const reels = [...document.querySelectorAll(".reel-window")];
   const button = document.querySelector("#gameButton");
   const isJackpot = attemptsUsed % redirectEvery === 0;
   const result = isJackpot
     ? ["7️⃣", "7️⃣", "7️⃣"]
-    : Array.from({ length: 3 }, (_, index) => slotSymbols[(Math.floor(Math.random() * (slotSymbols.length - 1)) + index) % slotSymbols.length]);
+    : getNonWinningSlotResult();
 
   button.disabled = true;
   button.textContent = "Rolling...";
-  reels.forEach((reel) => reel.classList.add("rolling"));
+  machine.classList.remove("slot-win");
+  machine.classList.add("slot-spinning");
+
+  reels.forEach((reel, index) => {
+    const strip = reel.querySelector(".reel-strip");
+    const symbolIndex = slotSymbols.indexOf(result[index]);
+    const finalIndex = slotSymbols.length * 3 + symbolIndex;
+    const finalOffset = finalIndex * 88;
+
+    strip.style.transition = "none";
+    strip.style.transform = "translateY(0)";
+    strip.getBoundingClientRect();
+    reel.classList.add("is-spinning");
+
+    window.setTimeout(() => {
+      strip.style.transition = `transform ${1.65 + index * 0.38}s cubic-bezier(0.12, 0.82, 0.14, 1)`;
+      strip.style.transform = `translateY(-${finalOffset}px)`;
+    }, 40 + index * 120);
+
+    window.setTimeout(() => {
+      reel.classList.remove("is-spinning");
+      reel.classList.add("has-stopped");
+    }, 1900 + index * 430);
+  });
 
   window.setTimeout(() => {
-    reels.forEach((reel, index) => {
-      reel.classList.remove("rolling");
-      reel.textContent = result[index];
+    reels.forEach((reel) => {
+      reel.classList.remove("has-stopped");
     });
     renderWins();
+    machine.classList.remove("slot-spinning");
+    if (isJackpot) {
+      machine.classList.add("slot-win");
+    }
     showWinCelebration(isJackpot ? "🏆 Triple 7 Jackpot" : `${result.join(" ")} Bonus try`);
     button.disabled = false;
     button.textContent = "Pull Lever";
     isBusy = false;
     if (isJackpot) trackRedirectAndGo();
-  }, 1600);
+  }, 3300);
+}
+
+function getNonWinningSlotResult() {
+  const result = Array.from({ length: 3 }, () => slotSymbols[1 + Math.floor(Math.random() * (slotSymbols.length - 1))]);
+
+  if (result[0] === result[1] && result[1] === result[2]) {
+    result[2] = slotSymbols[(slotSymbols.indexOf(result[2]) + 1) % slotSymbols.length] || "🍋";
+  }
+
+  return result;
 }
 
 function buildBalloon() {
