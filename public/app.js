@@ -66,6 +66,7 @@ localStorage.setItem("luckySessionId", sessionId);
 const requestedGameRaw = new URLSearchParams(window.location.search).get("game");
 const requestedGame = requestedGameRaw === "balloon" ? "plane" : requestedGameRaw;
 const selectedGame = games.find((game) => game.id === requestedGame) || games[Math.floor(Math.random() * games.length)];
+document.body.classList.add(`theme-${selectedGame.id}`);
 document.body.classList.add("game-intro-active");
 let clientGeo = null;
 let clientGeoPromise = resolveClientGeo();
