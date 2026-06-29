@@ -1106,10 +1106,10 @@ h2 {
 }
 
 @keyframes planeBlastPlane {
-  0%, 100% { transform: scale(1) rotate(0deg); filter: none; }
-  22% { transform: scale(1.08) rotate(4deg); filter: drop-shadow(0 0 20px rgba(255, 91, 54, 0.82)); }
-  44% { transform: scale(0.98) rotate(-3deg); }
-  68% { transform: scale(1.02) rotate(2deg); }
+  0% { opacity: 1; transform: scale(1) rotate(0deg); filter: none; }
+  18% { opacity: 1; transform: scale(1.1) rotate(4deg); filter: drop-shadow(0 0 22px rgba(255, 91, 54, 0.86)); }
+  42% { opacity: 0; transform: scale(0.18) rotate(-12deg); }
+  100% { opacity: 0; transform: scale(0.18) rotate(-12deg); }
 }
 
 @keyframes planeBlastFlash {
