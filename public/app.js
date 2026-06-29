@@ -35,10 +35,17 @@ const wheelIcons = ["🏆", "🎁", "💸", "🎟️", "⭐", "🍋", "🔑", "�
 const slotSymbols = ["7️⃣", "💎", "🍒", "🔔", "⭐", "🍋"];
 const slotStripSymbols = [...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols];
 const names = ["William", "Olivia", "James", "Sarah", "Henry", "Emma"];
-const wheelAudioPaths = {
-  background: "/games/wheel/assets/audio/background.mp3",
-  spin: "/games/wheel/assets/audio/spin.mp3",
-  win: "/games/wheel/assets/audio/win.mp3",
+const gameAudioFiles = {
+  wheel: {
+    background: "/games/wheel/assets/audio/background.mp3",
+    action: "/games/wheel/assets/audio/spin.mp3",
+    win: "/games/wheel/assets/audio/win.mp3",
+  },
+  slots: {
+    background: "/games/slots/assets/audio/background.mp3",
+    action: "/games/slots/assets/audio/spin.mp3",
+    win: "/games/slots/assets/audio/win.mp3",
+  },
 };
 
 const gameStage = document.querySelector("#gameStage");
@@ -67,53 +74,60 @@ let balloonGrowth = null;
 let balloonResolved = false;
 let winCloseTimer = null;
 let audioUnlocked = false;
-let wheelSounds = null;
-let pendingWheelMusicStart = false;
+let gameSounds = null;
+let pendingMusicStart = false;
 
 function timeout(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function getWheelSounds() {
-  if (wheelSounds) {
-    return wheelSounds;
+function getGameSounds() {
+  const files = gameAudioFiles[selectedGame.id];
+  if (!files) {
+    return null;
   }
 
-  wheelSounds = {
-    background: new Audio(wheelAudioPaths.background),
-    spin: new Audio(wheelAudioPaths.spin),
-    win: new Audio(wheelAudioPaths.win),
+  if (gameSounds) {
+    return gameSounds;
+  }
+
+  gameSounds = {
+    background: new Audio(files.background),
+    action: new Audio(files.action),
+    win: new Audio(files.win),
   };
-  wheelSounds.background.loop = true;
-  wheelSounds.background.volume = 0.32;
-  wheelSounds.spin.volume = 0.72;
-  wheelSounds.win.volume = 0.88;
-  return wheelSounds;
+  gameSounds.background.loop = true;
+  gameSounds.background.volume = 0.32;
+  gameSounds.action.volume = 0.72;
+  gameSounds.win.volume = 0.88;
+  Object.values(gameSounds).forEach((audio) => {
+    audio.preload = "auto";
+  });
+  return gameSounds;
 }
 
 function safePlay(audio) {
   if (!audio) return;
   audio.currentTime = 0;
   audio.play().catch(() => {
-    pendingWheelMusicStart = true;
+    pendingMusicStart = true;
   });
 }
 
-function unlockWheelAudio() {
-  if (selectedGame.id !== "wheel") return;
-  const sounds = getWheelSounds();
+function unlockGameAudio() {
+  const sounds = getGameSounds();
+  if (!sounds) return;
   audioUnlocked = true;
   sounds.background.play().catch(() => {
-    pendingWheelMusicStart = true;
+    pendingMusicStart = true;
   });
 }
 
 function unlockAudioFromGesture() {
-  if (selectedGame.id !== "wheel") return;
-  unlockWheelAudio();
-  if (pendingWheelMusicStart) {
-    pendingWheelMusicStart = false;
-    getWheelSounds().background.play().catch(() => {});
+  unlockGameAudio();
+  if (pendingMusicStart) {
+    pendingMusicStart = false;
+    getGameSounds()?.background.play().catch(() => {});
   }
 }
 
@@ -224,8 +238,8 @@ function showWinCelebration(label) {
   winOverlay.classList.add("is-visible");
   document.body.classList.add("modal-open");
   document.body.classList.add("casino-win");
-  if (selectedGame.id === "wheel" && audioUnlocked) {
-    safePlay(getWheelSounds().win);
+  if (audioUnlocked) {
+    safePlay(getGameSounds()?.win);
   }
   launchConfetti();
 
@@ -270,7 +284,7 @@ function playWheel() {
   if (isBusy) return;
   isBusy = true;
   attemptsUsed += 1;
-  unlockWheelAudio();
+  unlockGameAudio();
 
   const wheel = document.querySelector("#wheel");
   const button = document.querySelector("#gameButton");
@@ -284,7 +298,7 @@ function playWheel() {
   button.disabled = true;
   button.textContent = "Spinning...";
   if (audioUnlocked) {
-    safePlay(getWheelSounds().spin);
+    safePlay(getGameSounds()?.action);
   }
   wheelRotation += (5 + Math.floor(Math.random() * 3)) * 360 + targetDelta;
   wheel.style.transform = `rotate(${wheelRotation}deg)`;
@@ -344,6 +358,10 @@ function playSlots() {
 
   button.disabled = true;
   button.textContent = "Rolling...";
+  unlockGameAudio();
+  if (audioUnlocked) {
+    safePlay(getGameSounds()?.action);
+  }
   machine.classList.remove("slot-win");
   machine.classList.add("slot-spinning");
 
@@ -424,6 +442,10 @@ function startBalloon(event) {
   isBusy = true;
   balloonResolved = false;
   attemptsUsed += 1;
+  unlockGameAudio();
+  if (audioUnlocked) {
+    safePlay(getGameSounds()?.action);
+  }
 
   const balloon = document.querySelector("#balloon");
   const status = document.querySelector("#balloonStatus");
