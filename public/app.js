@@ -30,8 +30,7 @@ const games = [
   },
 ];
 
-const wheelPrizes = ["Jackpot", "Gift", "Cashback", "Promo code", "25% Discount", "Surprise", "500 Points", "Free Spin"];
-const wheelIcons = ["🏆", "🎁", "💸", "🎟️", "⭐", "🍋", "🔑", "🎰"];
+const wheelPrizes = ["50 Free Spins", "5 Free Spins", "10 Free Spins", "15 Free Spins", "20 Free Spins", "25 Free Spins", "30 Free Spins", "40 Free Spins"];
 const slotSymbols = ["7️⃣", "💎", "🍒", "🔔", "⭐", "🍋"];
 const slotStripSymbols = [...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols];
 const names = ["William", "Olivia", "James", "Sarah", "Henry", "Emma"];
@@ -290,10 +289,17 @@ function closeWinCelebration() {
 winPrize.addEventListener("click", closeWinCelebration);
 
 function setHeader() {
+  document.body.dataset.game = selectedGame.id;
+  if (selectedGame.id === "wheel") {
+    eyebrow.textContent = "";
+    title.innerHTML = `<img class="game-logo-title" src="/games/wheel/assets/images/logo.png" alt="${selectedGame.title}">`;
+    subtitle.textContent = "";
+    return;
+  }
+
   title.textContent = selectedGame.title;
   eyebrow.textContent = selectedGame.eyebrow;
   subtitle.textContent = selectedGame.subtitle;
-  document.body.dataset.game = selectedGame.id;
 }
 
 function buildWheel() {
@@ -302,7 +308,10 @@ function buildWheel() {
       <div class="pointer" aria-hidden="true"></div>
       <div class="wheel" id="wheel" aria-hidden="true">
         ${wheelPrizes
-          .map((prize, index) => `<div class="label label-${index + 1}"><span>${prize}</span><b>${wheelIcons[index]}</b></div>`)
+          .map(
+            (prize, index) =>
+              `<div class="label label-${index + 1}"><span class="label-number">${prize.split(" ")[0]}</span><span class="label-caption">Free Spins</span></div>`,
+          )
           .join("")}
         <button class="wheel-center" id="spinCenter" type="button" aria-label="Spin the wheel"></button>
       </div>
@@ -340,7 +349,7 @@ function playWheel() {
 
   window.setTimeout(() => {
     renderWins();
-    showWinCelebration(`${wheelIcons[prizeIndex]} ${wheelPrizes[prizeIndex]}`);
+    showWinCelebration(wheelPrizes[prizeIndex]);
     button.disabled = false;
     setButtonLabel(button, "Spin");
     isBusy = false;
