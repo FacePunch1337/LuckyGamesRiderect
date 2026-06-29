@@ -121,6 +121,12 @@ function getGameSounds() {
   return gameSounds;
 }
 
+function setButtonLabel(button, label) {
+  button.textContent = label;
+  button.dataset.label = label;
+  button.setAttribute("aria-label", label);
+}
+
 function safePlay(audio) {
   if (!audio) return;
   audio.currentTime = 0;
@@ -300,7 +306,7 @@ function buildWheel() {
         <button class="wheel-center" id="spinCenter" type="button" aria-label="Spin the wheel"></button>
       </div>
     </div>
-    <button class="spin-button" id="gameButton" type="button">Spin</button>
+    <button class="spin-button" id="gameButton" type="button" data-label="Spin" aria-label="Spin">Spin</button>
   `;
 
   document.querySelector("#gameButton").addEventListener("click", playWheel);
@@ -324,7 +330,7 @@ function playWheel() {
   const targetDelta = (stopAngle - currentAngle + 360) % 360;
 
   button.disabled = true;
-  button.textContent = "Spinning...";
+  setButtonLabel(button, "Spinning...");
   if (audioUnlocked) {
     safePlay(getGameSounds()?.action);
   }
@@ -335,7 +341,7 @@ function playWheel() {
     renderWins();
     showWinCelebration(`${wheelIcons[prizeIndex]} ${wheelPrizes[prizeIndex]}`);
     button.disabled = false;
-    button.textContent = "Spin";
+    setButtonLabel(button, "Spin");
     isBusy = false;
     if (isJackpot) trackRedirectAndGo();
   }, 4300);
@@ -366,7 +372,7 @@ function buildSlots() {
       <div class="slot-lever" aria-hidden="true"><span></span></div>
       <div class="payline" id="slotMessage">Match 3 symbols to unlock the jackpot</div>
     </div>
-    <button class="spin-button" id="gameButton" type="button">Pull Lever</button>
+    <button class="spin-button" id="gameButton" type="button" data-label="Pull Lever" aria-label="Pull Lever">Pull Lever</button>
   `;
   document.querySelector("#gameButton").addEventListener("click", playSlots);
 }
@@ -387,7 +393,7 @@ function playSlots() {
     : getNonWinningSlotResult();
 
   button.disabled = true;
-  button.textContent = "Rolling...";
+  setButtonLabel(button, "Rolling...");
   message.textContent = "Reels are spinning...";
   unlockGameAudio();
   if (audioUnlocked) {
@@ -432,7 +438,7 @@ function playSlots() {
       message.textContent = "No match. Try again.";
     }
     button.disabled = false;
-    button.textContent = "Pull Lever";
+    setButtonLabel(button, "Pull Lever");
     isBusy = false;
     if (isJackpot) trackRedirectAndGo();
   }, 3300);
@@ -462,7 +468,7 @@ function buildPlane() {
       </div>
       <p class="plane-status" id="planeStatus">Hold to take off.</p>
     </div>
-    <button class="spin-button hold-button" id="gameButton" type="button">Hold to Fly</button>
+    <button class="spin-button hold-button" id="gameButton" type="button" data-label="Hold to Fly" aria-label="Hold to Fly">Hold to Fly</button>
   `;
 
   const button = document.querySelector("#gameButton");

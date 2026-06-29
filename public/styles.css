@@ -224,18 +224,40 @@ h1 {
 }
 
 .spin-button {
+  position: relative;
   width: min(240px, 78%);
   min-height: 52px;
   border: 0;
   border-radius: 999px;
   background: linear-gradient(180deg, #ffc739, #f6a90c);
-  color: #162033;
+  color: transparent;
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
   box-shadow: 0 10px 24px rgba(239, 202, 110, 0.34);
+}
+
+.spin-button::after {
+  content: attr(data-label);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #162033;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.spin-button::selection {
+  background: transparent;
 }
 
 .spin-button:disabled {
