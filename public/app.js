@@ -76,6 +76,7 @@ let planeResolved = false;
 let planeMultiplier = 1;
 let planeTargetMultiplier = 2.1;
 let planeProgress = 0;
+let lastPlaneMotion = null;
 let winCloseTimer = null;
 let audioUnlocked = false;
 let gameSounds = null;
@@ -502,6 +503,7 @@ function startPlane(event) {
   const isJackpot = attemptsUsed % redirectEvery === 0;
   planeMultiplier = 1;
   planeProgress = 0;
+  lastPlaneMotion = null;
   planeTargetMultiplier = isJackpot ? 5 : 1.7 + Math.random() * 0.8;
   plane.classList.remove("crashed", "winner");
   sky.classList.add("is-flying");
@@ -514,6 +516,7 @@ function startPlane(event) {
       : planeMultiplier + 0.031;
     planeProgress = Math.min((planeMultiplier - 1) / 4, 1);
     const motion = getPlaneMotion(sky, planeProgress);
+    lastPlaneMotion = motion;
 
     plane.style.transform = `translate(${motion.x}px, ${motion.y}px) rotate(${motion.angle}deg)`;
     badge.style.transform = `translate(${motion.badgeX}px, ${motion.badgeY}px)`;
@@ -592,6 +595,7 @@ function finishPlane(isJackpot) {
 
   renderWins();
   if (isJackpot) {
+    planeMultiplier = planeTargetMultiplier;
     showWinCelebration(`✈ x${planeMultiplier.toFixed(2)} Jackpot`);
   }
 
@@ -612,24 +616,34 @@ function finishPlane(isJackpot) {
 }
 
 function animatePlaneCrash(plane, sky) {
-  const crashMotion = getPlaneMotion(sky, planeProgress);
+  const crashMotion = lastPlaneMotion || getPlaneMotion(sky, planeProgress);
   const endY = Math.min(sky.clientHeight - 52, crashMotion.y + 126);
-  const currentTransform = getComputedStyle(plane).transform;
+  const duration = 1450;
+  const startY = crashMotion.y;
+  const startAngle = crashMotion.angle;
+  let startedAt = 0;
 
   plane.classList.add("crashed");
   plane.style.transition = "none";
-  plane.style.transform = currentTransform === "none"
-    ? `translate(${crashMotion.x}px, ${crashMotion.y}px) rotate(${crashMotion.angle}deg)`
-    : currentTransform;
+  plane.style.transform = `translate(${crashMotion.x}px, ${startY}px) rotate(${startAngle}deg)`;
   plane.style.opacity = "1";
 
-  plane.offsetHeight;
+  const animate = (timestamp) => {
+    startedAt ||= timestamp;
+    const progress = Math.min((timestamp - startedAt) / duration, 1);
+    const eased = progress * progress * (3 - 2 * progress);
+    const y = startY + (endY - startY) * eased;
+    const angle = startAngle + (50 - startAngle) * eased;
 
-  window.requestAnimationFrame(() => {
-    plane.style.transition = "transform 1.35s cubic-bezier(0.22, 0.04, 0.36, 1), opacity 1.35s ease";
-    plane.style.transform = `translate(${crashMotion.x}px, ${endY}px) rotate(54deg)`;
-    plane.style.opacity = "0.36";
-  });
+    plane.style.transform = `translate(${crashMotion.x}px, ${y}px) rotate(${angle}deg)`;
+    plane.style.opacity = `${1 - eased * 0.62}`;
+
+    if (progress < 1 && plane.classList.contains("crashed")) {
+      window.requestAnimationFrame(animate);
+    }
+  };
+
+  window.requestAnimationFrame(animate);
 }
 
 function initGame() {
