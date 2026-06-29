@@ -75,7 +75,13 @@ body.theme-wheel::before {
 }
 
 body.theme-wheel::after {
-  background: url("/games/wheel/assets/images/sakura-frame.svg") center top / max(1180px, 100vw) auto no-repeat;
+  background:
+    radial-gradient(ellipse at 8% -12%, rgba(255, 183, 219, 0.32) 0 4rem, transparent 13rem),
+    radial-gradient(ellipse at 92% -12%, rgba(255, 183, 219, 0.32) 0 4rem, transparent 13rem),
+    url("/games/wheel/assets/images/sakura-frame.svg") center top / 100vw auto no-repeat,
+    radial-gradient(ellipse at 12% -10%, rgba(255, 201, 232, 0.95) 0 0.34rem, transparent 0.38rem) 0 0 / 260px 320px,
+    radial-gradient(ellipse at 65% -8%, rgba(255, 143, 198, 0.72) 0 0.28rem, transparent 0.32rem) 0 0 / 340px 420px;
+  animation: sakuraPetalsFall 12s linear infinite;
 }
 
 body.theme-slots {
@@ -170,9 +176,9 @@ h1 {
 
 .game-logo-title {
   display: block;
-  width: min(112vw, 720px);
-  max-height: 210px;
-  margin: -18px auto -12px;
+  width: clamp(320px, 44vw, 560px);
+  max-height: 180px;
+  margin: 0 auto 4px;
   object-fit: contain;
   filter: drop-shadow(0 12px 0 rgba(37, 7, 29, 0.34)) drop-shadow(0 0 28px rgba(255, 187, 86, 0.28));
 }
@@ -1482,6 +1488,25 @@ h2 {
   100% { opacity: 0; transform: translate3d(var(--drift), 112vh, 0) rotate(var(--spin)); }
 }
 
+@keyframes sakuraPetalsFall {
+  0% {
+    background-position:
+      center top,
+      center top,
+      center top,
+      0 -320px,
+      120px -420px;
+  }
+  100% {
+    background-position:
+      center top,
+      center top,
+      center top,
+      90px 100vh,
+      -80px 100vh;
+  }
+}
+
 @keyframes casinoFlash {
   0%, 100% { background-color: transparent; }
   50% { background-color: rgba(255, 189, 32, 0.14); }
@@ -1642,11 +1667,6 @@ h2 {
 }
 
 @media (max-width: 900px) {
-  body.theme-wheel::after {
-    background-size: 980px auto;
-    background-position: center top;
-  }
-
   .reviews-grid {
     grid-template-columns: 1fr;
   }
@@ -1657,15 +1677,10 @@ h2 {
     padding-inline: 12px;
   }
 
-  body.theme-wheel::after {
-    background-size: 720px auto;
-    background-position: center top;
-  }
-
   .game-logo-title {
-    width: min(100%, 420px);
-    max-height: 168px;
-    margin: -8px auto 0;
+    width: clamp(260px, 82vw, 380px);
+    max-height: 150px;
+    margin: 0 auto 4px;
   }
 
   .intro-logo {
