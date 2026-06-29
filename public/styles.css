@@ -597,7 +597,7 @@ h1 {
   font-size: 16px;
   font-weight: 900;
   line-height: 1;
-  transform: translate(128px, 120px);
+  transform: translate(330px, 220px);
   box-shadow: 0 0 22px rgba(255, 189, 32, 0.45);
   transition: transform 0.08s linear;
 }
@@ -611,7 +611,7 @@ h1 {
   place-items: center;
   width: 126px;
   height: 78px;
-  transform: translate(112px, 156px) rotate(-18deg);
+  transform: translate(261px, 257px) rotate(-90deg);
   transition: transform 0.08s linear;
   filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.28)) drop-shadow(0 0 18px rgba(49, 208, 255, 0.52));
 }
@@ -1074,9 +1074,9 @@ h2 {
 }
 
 @keyframes planeCrash {
-  0% { transform: translate(var(--crash-x, 112px), var(--crash-y, 156px)) rotate(var(--crash-angle, -18deg)); opacity: 1; }
-  55% { transform: translate(var(--crash-mid-x, 94px), var(--crash-mid-y, 200px)) rotate(18deg); opacity: 1; }
-  100% { transform: translate(var(--crash-end-x, 78px), var(--crash-end-y, 248px)) rotate(64deg); opacity: 0.35; }
+  0% { transform: translate(var(--crash-x, 261px), var(--crash-y, 257px)) rotate(var(--crash-angle, -90deg)); opacity: 1; }
+  55% { transform: translate(var(--crash-mid-x, 243px), var(--crash-mid-y, 301px)) rotate(18deg); opacity: 1; }
+  100% { transform: translate(var(--crash-end-x, 227px), var(--crash-end-y, 340px)) rotate(64deg); opacity: 0.35; }
 }
 
 @keyframes planeWin {
