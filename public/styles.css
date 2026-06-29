@@ -217,27 +217,6 @@ h1 {
   cursor: wait;
 }
 
-.sound-button {
-  min-height: 36px;
-  margin: -8px auto 12px;
-  padding: 0 16px;
-  border: 1px solid rgba(255, 218, 106, 0.44);
-  border-radius: 999px;
-  background: rgba(21, 18, 55, 0.86);
-  color: #ffe87d;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 0 18px rgba(255, 189, 32, 0.16);
-}
-
-.sound-button:hover {
-  border-color: rgba(255, 218, 106, 0.8);
-}
-
 .slot-machine {
   position: relative;
   width: min(100%, 360px);

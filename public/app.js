@@ -63,7 +63,6 @@ let balloonResolved = false;
 let winCloseTimer = null;
 let audioUnlocked = false;
 let wheelSounds = null;
-let soundMuted = localStorage.getItem("luckySoundMuted") === "true";
 
 function timeout(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -83,9 +82,6 @@ function getWheelSounds() {
   wheelSounds.background.volume = 0.32;
   wheelSounds.spin.volume = 0.72;
   wheelSounds.win.volume = 0.88;
-  Object.values(wheelSounds).forEach((audio) => {
-    audio.muted = soundMuted;
-  });
   return wheelSounds;
 }
 
@@ -100,19 +96,6 @@ function unlockWheelAudio() {
   const sounds = getWheelSounds();
   audioUnlocked = true;
   sounds.background.play().catch(() => {});
-}
-
-function toggleSound() {
-  soundMuted = !soundMuted;
-  localStorage.setItem("luckySoundMuted", String(soundMuted));
-  const sounds = getWheelSounds();
-  Object.values(sounds).forEach((audio) => {
-    audio.muted = soundMuted;
-  });
-  document.querySelector("#soundButton").textContent = soundMuted ? "Sound Off" : "Sound On";
-  if (!soundMuted) {
-    unlockWheelAudio();
-  }
 }
 
 async function resolveClientGeo() {
@@ -253,13 +236,11 @@ function buildWheel() {
         <button class="wheel-center" id="spinCenter" type="button" aria-label="Spin the wheel"></button>
       </div>
     </div>
-    <button class="sound-button" id="soundButton" type="button">${soundMuted ? "Sound Off" : "Sound On"}</button>
     <button class="spin-button" id="gameButton" type="button">Spin</button>
   `;
 
   document.querySelector("#gameButton").addEventListener("click", playWheel);
   document.querySelector("#spinCenter").addEventListener("click", playWheel);
-  document.querySelector("#soundButton").addEventListener("click", toggleSound);
 }
 
 function playWheel() {
