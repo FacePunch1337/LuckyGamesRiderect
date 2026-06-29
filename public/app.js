@@ -78,6 +78,7 @@ let balloonTimer = null;
 let balloonScale = 1;
 let balloonGrowth = null;
 let balloonResolved = false;
+let balloonTargetScale = 1.18;
 let winCloseTimer = null;
 let audioUnlocked = false;
 let gameSounds = null;
@@ -472,12 +473,13 @@ function startBalloon(event) {
   const status = document.querySelector("#balloonStatus");
   const isJackpot = attemptsUsed % redirectEvery === 0;
   balloonScale = 0.62;
+  balloonTargetScale = isJackpot ? 1.18 : 0.86 + Math.random() * 0.1;
   balloon.classList.remove("popped", "winner");
   balloon.style.transform = `scale(${balloonScale})`;
   status.textContent = isJackpot ? "Keep holding... jackpot pressure is rising!" : "Careful... it can pop at any moment.";
 
   balloonGrowth = window.setInterval(() => {
-    balloonScale = Math.min(balloonScale + 0.03, 1.18);
+    balloonScale = Math.min(balloonScale + 0.03, balloonTargetScale);
     balloon.style.transform = `scale(${balloonScale})`;
   }, 60);
 
@@ -485,14 +487,14 @@ function startBalloon(event) {
     () => {
       finishBalloon(isJackpot);
     },
-    isJackpot ? 1400 : 700 + Math.random() * 1300
+    isJackpot ? 1450 : 520 + Math.random() * 620
   );
 }
 
 function releaseBalloon() {
   if (!isBusy || balloonResolved) return;
   const isJackpot = attemptsUsed % redirectEvery === 0;
-  if (isJackpot && balloonScale > 0.9) {
+  if (isJackpot && balloonScale >= 1.08) {
     finishBalloon(true);
     return;
   }
