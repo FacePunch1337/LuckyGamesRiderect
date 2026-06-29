@@ -610,7 +610,7 @@ h1 {
   place-items: center;
   width: 126px;
   height: 78px;
-  transform: translate(297px, 156px) rotate(-15deg);
+  transform: translate(297px, 156px) rotate(-28deg);
   transition: transform 0.11s linear;
   filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.28)) drop-shadow(0 0 18px rgba(49, 208, 255, 0.52));
 }
