@@ -452,9 +452,9 @@ function buildPlane() {
   gameStage.innerHTML = `
     <div class="plane-game" id="planePad">
       <div class="sky-track" id="skyTrack">
-        <img class="cloud cloud-1" src="/games/plane/assets/images/claude.png" alt="" aria-hidden="true">
-        <img class="cloud cloud-2" src="/games/plane/assets/images/claude.png" alt="" aria-hidden="true">
-        <img class="cloud cloud-3" src="/games/plane/assets/images/claude.png" alt="" aria-hidden="true">
+        <img class="cloud cloud-1" src="/games/plane/assets/images/claude-clean.png" alt="" aria-hidden="true">
+        <img class="cloud cloud-2" src="/games/plane/assets/images/claude-clean.png" alt="" aria-hidden="true">
+        <img class="cloud cloud-3" src="/games/plane/assets/images/claude-clean.png" alt="" aria-hidden="true">
         <div class="multiplier-badge" id="planeMultiplier">x1.00</div>
         <div class="plane" id="plane">
           <img src="/games/plane/assets/images/plane-cropped.png" alt="Plane" draggable="false">
@@ -497,10 +497,10 @@ function createPlaneIntro() {
   intro.setAttribute("aria-hidden", "true");
   intro.innerHTML = `
     <div class="plane-intro-sky">
-      <img class="intro-cloud intro-cloud-left" src="/games/plane/assets/images/claude.png" alt="">
-      <img class="intro-cloud intro-cloud-right" src="/games/plane/assets/images/claude.png" alt="">
-      <img class="intro-cloud intro-cloud-top-left" src="/games/plane/assets/images/claude.png" alt="">
-      <img class="intro-cloud intro-cloud-top-right" src="/games/plane/assets/images/claude.png" alt="">
+      <img class="intro-cloud intro-cloud-left" src="/games/plane/assets/images/claude-clean.png" alt="">
+      <img class="intro-cloud intro-cloud-right" src="/games/plane/assets/images/claude-clean.png" alt="">
+      <img class="intro-cloud intro-cloud-top-left" src="/games/plane/assets/images/claude-clean.png" alt="">
+      <img class="intro-cloud intro-cloud-top-right" src="/games/plane/assets/images/claude-clean.png" alt="">
       <img class="intro-plane" src="/games/plane/assets/images/introPlane.png" alt="">
       <img class="intro-logo" src="/games/plane/assets/images/logo.png" alt="PlaneGG">
     </div>

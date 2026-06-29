@@ -566,22 +566,22 @@ h1 {
 }
 
 .intro-cloud {
-  width: min(44vw, 430px);
+  width: min(30vw, 300px);
   opacity: 0;
   filter: drop-shadow(0 12px 0 rgba(70, 180, 214, 0.22));
 }
 
 .intro-cloud-left {
   left: -24vw;
-  bottom: 32%;
-  transform: scale(1.65);
+  bottom: 35%;
+  transform: scale(1.28);
   animation: introCloudLeft 1.15s ease-out 0.35s forwards;
 }
 
 .intro-cloud-right {
   right: -25vw;
-  bottom: 28%;
-  transform: scale(1.75);
+  bottom: 32%;
+  transform: scale(1.34);
   animation: introCloudRight 1.15s ease-out 0.42s forwards;
 }
 
@@ -1204,12 +1204,12 @@ h2 {
 
 @keyframes introCloudLeft {
   0% { opacity: 0; left: -36vw; }
-  100% { opacity: 1; left: -5vw; }
+  100% { opacity: 1; left: 4vw; }
 }
 
 @keyframes introCloudRight {
   0% { opacity: 0; right: -38vw; }
-  100% { opacity: 1; right: -5vw; }
+  100% { opacity: 1; right: 4vw; }
 }
 
 @keyframes introCloudTopLeft {
@@ -1329,17 +1329,17 @@ h2 {
   }
 
   .intro-cloud {
-    width: 58vw;
+    width: 42vw;
   }
 
   .intro-cloud-left {
     bottom: 34%;
-    transform: scale(1.55);
+    transform: scale(1.2);
   }
 
   .intro-cloud-right {
     bottom: 31%;
-    transform: scale(1.6);
+    transform: scale(1.24);
   }
 
   .game-stage {
