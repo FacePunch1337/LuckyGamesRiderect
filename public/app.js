@@ -63,6 +63,7 @@ let balloonResolved = false;
 let winCloseTimer = null;
 let audioUnlocked = false;
 let wheelSounds = null;
+let pendingWheelMusicStart = false;
 
 function timeout(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -88,15 +89,32 @@ function getWheelSounds() {
 function safePlay(audio) {
   if (!audio) return;
   audio.currentTime = 0;
-  audio.play().catch(() => {});
+  audio.play().catch(() => {
+    pendingWheelMusicStart = true;
+  });
 }
 
 function unlockWheelAudio() {
   if (selectedGame.id !== "wheel") return;
   const sounds = getWheelSounds();
   audioUnlocked = true;
-  sounds.background.play().catch(() => {});
+  sounds.background.play().catch(() => {
+    pendingWheelMusicStart = true;
+  });
 }
+
+function unlockAudioFromGesture() {
+  if (selectedGame.id !== "wheel") return;
+  unlockWheelAudio();
+  if (pendingWheelMusicStart) {
+    pendingWheelMusicStart = false;
+    getWheelSounds().background.play().catch(() => {});
+  }
+}
+
+["pointerdown", "touchstart", "keydown"].forEach((eventName) => {
+  window.addEventListener(eventName, unlockAudioFromGesture, { once: true, passive: true });
+});
 
 async function resolveClientGeo() {
   const cached = sessionStorage.getItem("luckyClientGeo");
