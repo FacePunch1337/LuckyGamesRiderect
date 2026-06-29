@@ -525,17 +525,6 @@ h1 {
     linear-gradient(180deg, rgba(0, 64, 184, 0.22), rgba(25, 217, 232, 0.34));
 }
 
-.plane-intro-sky::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 18%;
-  height: 16%;
-  background: linear-gradient(90deg, transparent, rgba(0, 26, 130, 0.18), transparent);
-  opacity: 0.7;
-}
-
 .intro-logo,
 .intro-plane,
 .intro-cloud {
