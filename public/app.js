@@ -1,3 +1,8 @@
+if (window.location.protocol === "file:") {
+  window.location.replace(`http://localhost:3000/${window.location.search}`);
+  throw new Error("Lucky Spin Games must be opened through http://localhost:3000, not file://");
+}
+
 const redirectSites = [
   "https://wadavavr0bx.com/ru/register/?visit_id=5fb658ea-02db-4ee1-8b6c-bd56a745cc8d&settings=WWFUZFBiR3RsZ3BXL1lPZzhSOXQ5SWtuYzhOVUE2TExaQUx2Nm9PZ3FtY3MwK0NBUlB4UHhZYmorRTEzaitCK1haYXlRT0xkczBjc0xoeFRna3pOUnpCYVBFRXlKQjMvdnZ2bXUvZjUySktjU1JhQW52RTR3eTNvMTYyU2hJTzRsUGp5OVBxemtpenBjMG9kTlNRQzRPNXM2dWRacytUT1d1cmxRTTdyM1pFNlhwWFlsU2VZWXJ4aHI2MStoTTYxOjo4YWl0QndlbkVYZ28xZzdkeXB0a25RPT0%3D&promo=f6608bd5-fd80-4230-b6de-9331e84bc106&utm_referrer=https://allingaminghub.com/",
   "https://777.ua/?gclid=Cj0KCQjwjIPSBhCCARIsABGyK7t508wGRJALYrBMLtbByeFLiaF81iiVZjufLEWFDFINmZHQgERvN7IaAhBeEALw_wcB",
