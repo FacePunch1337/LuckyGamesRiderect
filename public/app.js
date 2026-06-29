@@ -563,10 +563,6 @@ function getPlaneMotion(sky, progress) {
 function releasePlane() {
   if (!isBusy || planeResolved) return;
   const isJackpot = attemptsUsed % redirectEvery === 0;
-  if (!isJackpot && planeMultiplier < minPlaneExplosionMultiplier) {
-    return;
-  }
-
   if (isJackpot && planeMultiplier >= 4.75) {
     finishPlane(true);
     return;
