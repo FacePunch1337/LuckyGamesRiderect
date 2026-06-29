@@ -1,43 +1,80 @@
 import "dotenv/config";
 import crypto from "node:crypto";
 import express from "express";
-import { MongoClient } from "mongodb";
+import pg from "pg";
 
 const app = express();
 const port = process.env.PORT || 3000;
-const mongoUri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB || "lucky_games";
+const databaseUrl = process.env.DATABASE_URL;
 const adminPassword = process.env.ADMIN_PASSWORD || "";
 
-if (!mongoUri) {
-  console.warn("MONGODB_URI is not set. Analytics routes will return a database configuration error.");
+if (!databaseUrl) {
+  console.warn("DATABASE_URL is not set. Analytics routes will return a database configuration error.");
 }
 
 app.set("trust proxy", true);
 app.use(express.json({ limit: "64kb" }));
 app.use(express.static("public", { extensions: ["html"] }));
 
-let mongoClient;
-let mongoDb;
+let pool;
+let schemaReady = false;
 
-async function getDb() {
-  if (!mongoUri) {
-    throw new Error("MONGODB_URI is not configured");
+async function getPool() {
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is not configured");
   }
 
-  if (!mongoClient) {
-    mongoClient = new MongoClient(mongoUri);
-    await mongoClient.connect();
-    mongoDb = mongoClient.db(dbName);
-    await Promise.all([
-      mongoDb.collection("page_views").createIndex({ createdAt: -1 }),
-      mongoDb.collection("page_views").createIndex({ game: 1, createdAt: -1 }),
-      mongoDb.collection("redirects").createIndex({ createdAt: -1 }),
-      mongoDb.collection("redirects").createIndex({ game: 1, createdAt: -1 }),
-    ]);
+  if (!pool) {
+    pool = new pg.Pool({
+      connectionString: databaseUrl,
+      ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+    });
   }
 
-  return mongoDb;
+  if (!schemaReady) {
+    await ensureSchema();
+    schemaReady = true;
+  }
+
+  return pool;
+}
+
+async function ensureSchema() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS page_views (
+      id BIGSERIAL PRIMARY KEY,
+      game TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      ip_hash TEXT NOT NULL,
+      country TEXT,
+      region TEXT,
+      city TEXT,
+      geo_source TEXT,
+      user_agent TEXT,
+      referrer TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS redirects (
+      id BIGSERIAL PRIMARY KEY,
+      game TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      target_url TEXT,
+      ip_hash TEXT NOT NULL,
+      country TEXT,
+      region TEXT,
+      city TEXT,
+      geo_source TEXT,
+      user_agent TEXT,
+      referrer TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_page_views_created_at ON page_views (created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_page_views_game_created_at ON page_views (game, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_redirects_created_at ON redirects (created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_redirects_game_created_at ON redirects (game, created_at DESC);
+  `);
 }
 
 function getClientIp(req) {
@@ -94,25 +131,38 @@ function normalizeGame(game) {
   return ["wheel", "slots", "balloon"].includes(game) ? game : "unknown";
 }
 
-async function insertAnalytics(collectionName, req, extra) {
-  const db = await getDb();
+async function insertAnalytics(tableName, req, extra) {
+  const db = await getPool();
   const ip = getClientIp(req);
   const geo = await getGeo(req, ip);
-  const now = new Date();
+  const commonValues = [
+    normalizeGame(extra.game),
+    String(extra.sessionId || "anonymous").slice(0, 128),
+    hashIp(ip),
+    geo.country,
+    geo.region,
+    geo.city,
+    geo.source,
+    req.headers["user-agent"] || null,
+    req.headers.referer || req.headers.referrer || null,
+  ];
 
-  const doc = {
-    ...extra,
-    game: normalizeGame(extra.game),
-    sessionId: String(extra.sessionId || "anonymous").slice(0, 128),
-    ipHash: hashIp(ip),
-    geo,
-    userAgent: req.headers["user-agent"] || null,
-    referrer: req.headers.referer || req.headers.referrer || null,
-    createdAt: now,
-  };
+  if (tableName === "redirects") {
+    await db.query(
+      `INSERT INTO redirects
+        (game, session_id, ip_hash, country, region, city, geo_source, user_agent, referrer, target_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [...commonValues, String(extra.targetUrl || "").slice(0, 2048)]
+    );
+    return;
+  }
 
-  await db.collection(collectionName).insertOne(doc);
-  return doc;
+  await db.query(
+    `INSERT INTO page_views
+      (game, session_id, ip_hash, country, region, city, geo_source, user_agent, referrer)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    commonValues
+  );
 }
 
 app.post("/api/analytics/page-view", async (req, res) => {
@@ -141,44 +191,38 @@ app.post("/api/analytics/redirect", async (req, res) => {
 });
 
 async function getAnalyticsSummary() {
-  const db = await getDb();
+  const db = await getPool();
   const [totalViews, totalRedirects, viewsByGame, redirectsByGame, locations, recentRedirects] =
     await Promise.all([
-      db.collection("page_views").countDocuments(),
-      db.collection("redirects").countDocuments(),
-      db
-        .collection("page_views")
-        .aggregate([{ $group: { _id: "$game", count: { $sum: 1 } } }, { $sort: { count: -1 } }])
-        .toArray(),
-      db
-        .collection("redirects")
-        .aggregate([{ $group: { _id: "$game", count: { $sum: 1 } } }, { $sort: { count: -1 } }])
-        .toArray(),
-      db
-        .collection("page_views")
-        .aggregate([
-          {
-            $group: {
-              _id: {
-                country: { $ifNull: ["$geo.country", "Unknown"] },
-                region: { $ifNull: ["$geo.region", "Unknown"] },
-              },
-              count: { $sum: 1 },
-            },
-          },
-          { $sort: { count: -1 } },
-          { $limit: 25 },
-        ])
-        .toArray(),
-      db
-        .collection("redirects")
-        .find({}, { projection: { game: 1, targetUrl: 1, geo: 1, createdAt: 1 } })
-        .sort({ createdAt: -1 })
-        .limit(20)
-        .toArray(),
+      db.query("SELECT COUNT(*)::int AS count FROM page_views"),
+      db.query("SELECT COUNT(*)::int AS count FROM redirects"),
+      db.query("SELECT game AS id, COUNT(*)::int AS count FROM page_views GROUP BY game ORDER BY count DESC"),
+      db.query("SELECT game AS id, COUNT(*)::int AS count FROM redirects GROUP BY game ORDER BY count DESC"),
+      db.query(`
+        SELECT COALESCE(country, 'Unknown') AS country,
+               COALESCE(region, 'Unknown') AS region,
+               COUNT(*)::int AS count
+        FROM page_views
+        GROUP BY COALESCE(country, 'Unknown'), COALESCE(region, 'Unknown')
+        ORDER BY count DESC
+        LIMIT 25
+      `),
+      db.query(`
+        SELECT game, target_url, country, region, city, geo_source, created_at
+        FROM redirects
+        ORDER BY created_at DESC
+        LIMIT 20
+      `),
     ]);
 
-  return { totalViews, totalRedirects, viewsByGame, redirectsByGame, locations, recentRedirects };
+  return {
+    totalViews: totalViews.rows[0].count,
+    totalRedirects: totalRedirects.rows[0].count,
+    viewsByGame: viewsByGame.rows,
+    redirectsByGame: redirectsByGame.rows,
+    locations: locations.rows,
+    recentRedirects: recentRedirects.rows,
+  };
 }
 
 function requireAdmin(req, res, next) {
@@ -241,19 +285,19 @@ app.get("/admin", requireAdmin, async (_req, res) => {
     </div>
     <section>
       <h2>Visits by game</h2>
-      <table><thead><tr><th>Game</th><th>Visits</th></tr></thead><tbody>${rows(summary.viewsByGame, (x) => `<td>${escapeHtml(x._id)}</td><td>${x.count}</td>`)}</tbody></table>
+      <table><thead><tr><th>Game</th><th>Visits</th></tr></thead><tbody>${rows(summary.viewsByGame, (x) => `<td>${escapeHtml(x.id)}</td><td>${x.count}</td>`)}</tbody></table>
     </section>
     <section>
       <h2>Redirects by game</h2>
-      <table><thead><tr><th>Game</th><th>Redirects</th></tr></thead><tbody>${rows(summary.redirectsByGame, (x) => `<td>${escapeHtml(x._id)}</td><td>${x.count}</td>`)}</tbody></table>
+      <table><thead><tr><th>Game</th><th>Redirects</th></tr></thead><tbody>${rows(summary.redirectsByGame, (x) => `<td>${escapeHtml(x.id)}</td><td>${x.count}</td>`)}</tbody></table>
     </section>
     <section>
       <h2>Locations</h2>
-      <table><thead><tr><th>Country</th><th>Region</th><th>Visits</th></tr></thead><tbody>${rows(summary.locations, (x) => `<td>${escapeHtml(x._id.country)}</td><td>${escapeHtml(x._id.region)}</td><td>${x.count}</td>`)}</tbody></table>
+      <table><thead><tr><th>Country</th><th>Region</th><th>Visits</th></tr></thead><tbody>${rows(summary.locations, (x) => `<td>${escapeHtml(x.country)}</td><td>${escapeHtml(x.region)}</td><td>${x.count}</td>`)}</tbody></table>
     </section>
     <section>
       <h2>Recent redirects</h2>
-      <table><thead><tr><th>Date</th><th>Game</th><th>Country</th><th>Region</th><th>Target</th></tr></thead><tbody>${rows(summary.recentRedirects, (x) => `<td>${escapeHtml(new Date(x.createdAt).toLocaleString())}</td><td>${escapeHtml(x.game)}</td><td>${escapeHtml(x.geo?.country || "Unknown")}</td><td>${escapeHtml(x.geo?.region || "Unknown")}</td><td>${escapeHtml(x.targetUrl || "")}</td>`)}</tbody></table>
+      <table><thead><tr><th>Date</th><th>Game</th><th>Country</th><th>Region</th><th>Target</th></tr></thead><tbody>${rows(summary.recentRedirects, (x) => `<td>${escapeHtml(new Date(x.created_at).toLocaleString())}</td><td>${escapeHtml(x.game)}</td><td>${escapeHtml(x.country || "Unknown")}</td><td>${escapeHtml(x.region || "Unknown")}</td><td>${escapeHtml(x.target_url || "")}</td>`)}</tbody></table>
     </section>
   </main>
 </body>
@@ -265,7 +309,7 @@ app.get("/admin", requireAdmin, async (_req, res) => {
 
 app.get("/health", async (_req, res) => {
   try {
-    await getDb();
+    await getPool();
     res.json({ ok: true, db: true });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });

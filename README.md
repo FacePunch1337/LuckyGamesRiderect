@@ -10,12 +10,13 @@ On each page open, the frontend randomly selects one game. Each game guarantees 
 
 ## Analytics
 
-MongoDB collections:
+PostgreSQL tables:
 
-- `page_views`: one document per page/game view
-- `redirects`: one document per outgoing redirect
+- `page_views`: one row per page/game view
+- `redirects`: one row per outgoing redirect
 
 Stored fields include game id, session id, hashed IP, IP-derived geo fields, user agent, referrer, target URL for redirects, and timestamp.
+The server creates tables and indexes automatically on first database connection.
 
 The server does not request browser geolocation. Region detection uses proxy geo headers when available, or optional server-side IP lookup when `ENABLE_IP_GEOLOOKUP=true`.
 
@@ -32,8 +33,8 @@ npm install
 
 ```bash
 PORT=3000
-MONGODB_URI=mongodb+srv://user:password@cluster.example.mongodb.net/lucky_games
-MONGODB_DB=lucky_games
+DATABASE_URL=postgresql://user:password@host:5432/lucky_games?sslmode=require
+DATABASE_SSL=true
 ADMIN_PASSWORD=change-me
 ENABLE_IP_GEOLOOKUP=false
 ```
