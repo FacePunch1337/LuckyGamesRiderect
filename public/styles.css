@@ -623,6 +623,11 @@ h2 {
   box-shadow: 0 0 18px rgba(255, 189, 32, 0.72);
 }
 
+.confetti-piece.burst {
+  animation-name: confettiBurst;
+  animation-timing-function: cubic-bezier(0.16, 0.76, 0.24, 1);
+}
+
 .confetti-piece.suit {
   display: grid;
   place-items: center;
@@ -844,6 +849,24 @@ h2 {
   0% { opacity: 0; transform: translate3d(0, -20px, 0) rotate(0deg); }
   12% { opacity: 1; }
   100% { opacity: 0; transform: translate3d(var(--drift), 112vh, 0) rotate(var(--spin)); }
+}
+
+@keyframes confettiBurst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.72) rotate(0deg);
+  }
+  9% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 1;
+    transform: translate3d(var(--burst-x), var(--burst-y), 0) scale(1) rotate(var(--spin));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--burst-x) * 0.72), 112vh, 0) scale(0.94) rotate(calc(var(--spin) * 1.4));
+  }
 }
 
 @keyframes casinoFlash {
