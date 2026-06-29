@@ -50,6 +50,12 @@ body.casino-win {
   animation: casinoFlash 0.45s ease-in-out 5;
 }
 
+body.modal-open .app,
+body.modal-open .site-footer {
+  pointer-events: none;
+  user-select: none;
+}
+
 .app {
   width: min(100%, 460px);
   margin: 0 auto;
@@ -348,14 +354,14 @@ h1 {
 
 .slot-lever {
   position: absolute;
-  right: -22px;
-  top: 96px;
+  right: -24px;
+  top: 74px;
   width: 18px;
-  height: 92px;
+  height: 118px;
   border-radius: 999px;
   background: linear-gradient(180deg, #fff0a6, #8a5c15);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.38);
-  transform-origin: 50% 90%;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18), 0 8px 18px rgba(0, 0, 0, 0.38);
+  transform-origin: 50% 16px;
 }
 
 .slot-lever span {
@@ -371,7 +377,11 @@ h1 {
 }
 
 .slot-spinning .slot-lever {
-  animation: leverPull 0.68s ease-in-out;
+  animation: leverPullDown 0.86s cubic-bezier(0.2, 0.9, 0.18, 1);
+}
+
+.slot-spinning .slot-lever span {
+  animation: leverKnobDown 0.86s cubic-bezier(0.2, 0.9, 0.18, 1);
 }
 
 .slot-win {
@@ -400,11 +410,25 @@ h1 {
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 18px;
+  gap: 14px;
   touch-action: none;
+  overflow: hidden;
+  padding: 14px 0;
+}
+
+.balloon-frame {
+  position: relative;
+  width: 210px;
+  height: 235px;
+  display: grid;
+  justify-items: center;
+  align-items: end;
+  overflow: hidden;
 }
 
 .balloon {
+  position: relative;
+  z-index: 2;
   display: grid;
   place-items: center;
   width: 148px;
@@ -414,6 +438,7 @@ h1 {
   font-size: 48px;
   box-shadow: inset -16px -18px 0 rgba(0, 0, 0, 0.16), 0 24px 44px rgba(0, 0, 0, 0.32);
   transform-origin: 50% 90%;
+  transform: scale(0.62);
   transition: transform 0.08s linear;
 }
 
@@ -427,10 +452,14 @@ h1 {
 }
 
 .balloon-string {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
   width: 3px;
-  height: 68px;
-  order: 2;
+  height: 58px;
   background: rgba(255, 255, 255, 0.4);
+  transform: translateX(-50%);
+  z-index: 1;
 }
 
 .wins-panel {
@@ -497,6 +526,7 @@ h2 {
 .win-overlay.is-visible {
   opacity: 1;
   transform: scale(1);
+  pointer-events: auto;
 }
 
 .win-pop {
@@ -529,16 +559,33 @@ h2 {
 }
 
 .win-prize {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin: 18px auto 12px;
   width: fit-content;
   max-width: 100%;
   padding: 12px 18px;
+  border: 0;
   border-radius: 999px;
   background: linear-gradient(180deg, #ffe272, #ffac14);
   color: #171220;
+  font-family: inherit;
   font-size: clamp(18px, 5vw, 22px);
   font-weight: 900;
   line-height: 1.1;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(255, 189, 32, 0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.win-prize:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(255, 189, 32, 0.42);
+}
+
+.win-prize:active {
+  transform: translateY(1px) scale(0.98);
 }
 
 .win-subtitle {
@@ -800,9 +847,16 @@ h2 {
   100% { transform: translateY(0); }
 }
 
-@keyframes leverPull {
-  0%, 100% { transform: rotate(0deg); }
-  48% { transform: rotate(23deg); }
+@keyframes leverPullDown {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  38% { transform: translateY(36px) scaleY(0.92); }
+  62% { transform: translateY(30px) scaleY(0.96); }
+}
+
+@keyframes leverKnobDown {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  38% { transform: translateX(-50%) scale(0.92); }
+  62% { transform: translateX(-50%) scale(0.96); }
 }
 
 @keyframes slotWinPulse {

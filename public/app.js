@@ -55,6 +55,7 @@ let balloonTimer = null;
 let balloonScale = 1;
 let balloonGrowth = null;
 let balloonResolved = false;
+let winCloseTimer = null;
 
 function timeout(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -159,15 +160,21 @@ function showWinCelebration(label) {
   winPrize.textContent = label;
   winOverlay.setAttribute("aria-hidden", "false");
   winOverlay.classList.add("is-visible");
+  document.body.classList.add("modal-open");
   document.body.classList.add("casino-win");
   launchConfetti();
 
-  window.setTimeout(() => {
-    winOverlay.classList.remove("is-visible");
-    winOverlay.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("casino-win");
-  }, 2600);
+  window.clearTimeout(winCloseTimer);
+  winCloseTimer = window.setTimeout(closeWinCelebration, 2600);
 }
+
+function closeWinCelebration() {
+  winOverlay.classList.remove("is-visible");
+  winOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("casino-win", "modal-open");
+}
+
+winPrize.addEventListener("click", closeWinCelebration);
 
 function setHeader() {
   title.textContent = selectedGame.title;
@@ -323,8 +330,10 @@ function getNonWinningSlotResult() {
 function buildBalloon() {
   gameStage.innerHTML = `
     <div class="balloon-game" id="balloonPad">
-      <div class="balloon-string"></div>
-      <div class="balloon" id="balloon">💰</div>
+      <div class="balloon-frame">
+        <div class="balloon" id="balloon">💰</div>
+        <div class="balloon-string"></div>
+      </div>
       <p class="balloon-status" id="balloonStatus">Hold anywhere on the balloon to inflate.</p>
     </div>
     <button class="spin-button hold-button" id="gameButton" type="button">Hold to Inflate</button>
@@ -350,12 +359,13 @@ function startBalloon(event) {
   const balloon = document.querySelector("#balloon");
   const status = document.querySelector("#balloonStatus");
   const isJackpot = attemptsUsed % redirectEvery === 0;
-  balloonScale = 1;
+  balloonScale = 0.62;
   balloon.classList.remove("popped", "winner");
+  balloon.style.transform = `scale(${balloonScale})`;
   status.textContent = isJackpot ? "Keep holding... jackpot pressure is rising!" : "Careful... it can pop at any moment.";
 
   balloonGrowth = window.setInterval(() => {
-    balloonScale = Math.min(balloonScale + 0.035, 1.95);
+    balloonScale = Math.min(balloonScale + 0.03, 1.18);
     balloon.style.transform = `scale(${balloonScale})`;
   }, 60);
 
@@ -370,7 +380,7 @@ function startBalloon(event) {
 function releaseBalloon() {
   if (!isBusy || balloonResolved) return;
   const isJackpot = attemptsUsed % redirectEvery === 0;
-  if (isJackpot && balloonScale > 1.25) {
+  if (isJackpot && balloonScale > 0.9) {
     finishBalloon(true);
     return;
   }
@@ -395,7 +405,7 @@ function finishBalloon(isJackpot) {
   window.setTimeout(() => {
     balloon.classList.remove("popped", "winner");
     balloon.textContent = "💰";
-    balloon.style.transform = "scale(1)";
+    balloon.style.transform = "scale(0.62)";
     status.textContent = "Hold anywhere on the balloon to inflate.";
     isBusy = false;
   }, 1300);
