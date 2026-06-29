@@ -628,6 +628,39 @@ h1 {
   animation: none;
 }
 
+.plane.crashed::before,
+.plane.crashed::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 128px;
+  height: 128px;
+  pointer-events: none;
+}
+
+.plane.crashed::before {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.96) 0 12%, rgba(255, 228, 90, 0.86) 13% 28%, rgba(255, 91, 54, 0.58) 29% 46%, transparent 47%);
+  mix-blend-mode: screen;
+  animation: planeBlastFlash 0.62s ease-out forwards;
+}
+
+.plane.crashed::after {
+  background:
+    radial-gradient(circle at 50% 0%, #fff 0 3px, transparent 4px),
+    radial-gradient(circle at 92% 46%, #ff5b36 0 4px, transparent 5px),
+    radial-gradient(circle at 58% 94%, #ffdc45 0 5px, transparent 6px),
+    radial-gradient(circle at 8% 58%, #ffffff 0 4px, transparent 5px),
+    radial-gradient(circle at 20% 18%, #ff9f1c 0 5px, transparent 6px);
+  animation: planeBlastSparks 0.72s ease-out forwards;
+}
+
+.plane.crashed img {
+  animation: planeBlastPlane 0.58s ease-out both;
+}
+
 .plane.winner {
   animation: planeWin 0.52s ease-in-out infinite alternate;
 }
@@ -1070,6 +1103,25 @@ h2 {
 @keyframes cloudRush {
   from { transform: translate(220px, -110px) scale(1); }
   to { transform: translate(-420px, 210px) scale(1); }
+}
+
+@keyframes planeBlastPlane {
+  0%, 100% { transform: scale(1) rotate(0deg); filter: none; }
+  22% { transform: scale(1.08) rotate(4deg); filter: drop-shadow(0 0 20px rgba(255, 91, 54, 0.82)); }
+  44% { transform: scale(0.98) rotate(-3deg); }
+  68% { transform: scale(1.02) rotate(2deg); }
+}
+
+@keyframes planeBlastFlash {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.18); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(0.7); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.45); }
+}
+
+@keyframes planeBlastSparks {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.28) rotate(0deg); }
+  22% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.72) rotate(38deg); }
 }
 
 @keyframes planeWin {

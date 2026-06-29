@@ -586,7 +586,7 @@ function finishPlane(isJackpot) {
     sky.classList.remove("is-flying");
     plane.classList.add("winner");
   } else {
-    animatePlaneCrash(plane, sky);
+    explodePlane(plane, sky);
   }
   status.textContent = isJackpot ? `Max flight reached: x${planeMultiplier.toFixed(2)}!` : `Crashed at x${planeMultiplier.toFixed(2)}. Try again.`;
   if (audioUnlocked && !isJackpot) {
@@ -602,7 +602,6 @@ function finishPlane(isJackpot) {
   window.setTimeout(() => {
     sky.classList.remove("is-flying");
     plane.classList.remove("crashed", "winner");
-    plane.style.removeProperty("opacity");
     plane.style.removeProperty("transition");
     resetPlanePosition();
     document.querySelector("#planeMultiplier").textContent = "x1.00";
@@ -615,35 +614,12 @@ function finishPlane(isJackpot) {
   }
 }
 
-function animatePlaneCrash(plane, sky) {
+function explodePlane(plane, sky) {
   const crashMotion = lastPlaneMotion || getPlaneMotion(sky, planeProgress);
-  const endY = Math.min(sky.clientHeight - 52, crashMotion.y + 126);
-  const duration = 1450;
-  const startY = crashMotion.y;
-  const startAngle = crashMotion.angle;
-  let startedAt = 0;
 
   plane.classList.add("crashed");
   plane.style.transition = "none";
-  plane.style.transform = `translate(${crashMotion.x}px, ${startY}px) rotate(${startAngle}deg)`;
-  plane.style.opacity = "1";
-
-  const animate = (timestamp) => {
-    startedAt ||= timestamp;
-    const progress = Math.min((timestamp - startedAt) / duration, 1);
-    const eased = progress * progress * (3 - 2 * progress);
-    const y = startY + (endY - startY) * eased;
-    const angle = startAngle + (50 - startAngle) * eased;
-
-    plane.style.transform = `translate(${crashMotion.x}px, ${y}px) rotate(${angle}deg)`;
-    plane.style.opacity = `${1 - eased * 0.62}`;
-
-    if (progress < 1 && plane.classList.contains("crashed")) {
-      window.requestAnimationFrame(animate);
-    }
-  };
-
-  window.requestAnimationFrame(animate);
+  plane.style.transform = `translate(${crashMotion.x}px, ${crashMotion.y}px) rotate(${crashMotion.angle}deg)`;
 }
 
 function initGame() {
