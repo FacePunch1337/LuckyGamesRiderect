@@ -484,17 +484,22 @@ function buildPlane() {
 }
 
 function runGameIntro() {
-  const intro = selectedGame.id === "plane" ? createPlaneIntro() : createBasicGameIntro();
+  const intro = selectedGame.id === "plane"
+    ? createPlaneIntro()
+    : selectedGame.id === "wheel"
+      ? createWheelIntro()
+      : createBasicGameIntro();
   document.body.appendChild(intro);
 
+  const duration = selectedGame.id === "plane" ? 2450 : selectedGame.id === "wheel" ? 2300 : 1250;
   window.setTimeout(() => {
     document.body.classList.remove("game-intro-active");
     intro.classList.add("is-out");
-  }, selectedGame.id === "plane" ? 2450 : 1250);
+  }, duration);
 
   window.setTimeout(() => {
     intro.remove();
-  }, selectedGame.id === "plane" ? 3050 : 1850);
+  }, duration + 600);
 }
 
 function createPlaneIntro() {
@@ -509,6 +514,26 @@ function createPlaneIntro() {
       <img class="intro-cloud intro-cloud-top-right" src="/games/plane/assets/images/claude-clean.png" alt="">
       <img class="intro-plane" src="/games/plane/assets/images/introPlane.png" alt="">
       <img class="intro-logo" src="/games/plane/assets/images/logo.png" alt="PlaneGG">
+    </div>
+  `;
+  return intro;
+}
+
+function createWheelIntro() {
+  const intro = document.createElement("div");
+  intro.className = "game-intro wheel-intro";
+  intro.setAttribute("aria-hidden", "true");
+  intro.innerHTML = `
+    <div class="wheel-intro-sky">
+      <span class="wheel-star wheel-star-1"></span>
+      <span class="wheel-star wheel-star-2"></span>
+      <span class="wheel-star wheel-star-3"></span>
+      <span class="wheel-star wheel-star-4"></span>
+      <span class="wheel-petal wheel-petal-1"></span>
+      <span class="wheel-petal wheel-petal-2"></span>
+      <span class="wheel-petal wheel-petal-3"></span>
+      <img class="wheel-intro-moon" src="/games/wheel/assets/images/moon.png" alt="">
+      <img class="wheel-intro-logo" src="/games/wheel/assets/images/logo.png" alt="Katana Spins">
     </div>
   `;
   return intro;
