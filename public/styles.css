@@ -70,34 +70,37 @@ body.theme-wheel {
 body.theme-wheel::before {
   background:
     radial-gradient(circle, rgba(255,255,255,0.95) 0 1px, transparent 1.4px) 12px 18px / 90px 90px,
-    radial-gradient(circle, rgba(255,194,232,0.78) 0 1px, transparent 1.5px) 44px 62px / 132px 132px;
+    radial-gradient(circle, rgba(255,194,232,0.78) 0 1px, transparent 1.5px) 44px 62px / 132px 132px,
+    radial-gradient(ellipse at 12% 8%, rgba(255, 215, 238, 0.95) 0 0.46rem, transparent 0.5rem) 0 0 / 220px 260px repeat,
+    radial-gradient(ellipse at 62% 14%, rgba(255, 142, 197, 0.84) 0 0.36rem, transparent 0.4rem) 80px 40px / 280px 340px repeat,
+    radial-gradient(ellipse at 32% 10%, rgba(255, 234, 246, 0.86) 0 0.32rem, transparent 0.36rem) 160px 120px / 360px 420px repeat;
   opacity: 0.72;
+  animation: sakuraPetalsFall 7.2s linear infinite;
 }
 
 body.theme-wheel::after {
   background:
     radial-gradient(ellipse at 8% -12%, rgba(255, 183, 219, 0.32) 0 4rem, transparent 13rem),
     radial-gradient(ellipse at 92% -12%, rgba(255, 183, 219, 0.32) 0 4rem, transparent 13rem),
-    url("/games/wheel/assets/images/sakura-frame.svg") center top / 100vw auto no-repeat,
-    radial-gradient(ellipse at 12% 4%, rgba(255, 215, 238, 0.95) 0 0.48rem, transparent 0.52rem) 0 -260px / 220px 260px,
-    radial-gradient(ellipse at 62% 8%, rgba(255, 142, 197, 0.86) 0 0.38rem, transparent 0.42rem) 80px -340px / 280px 340px,
-    radial-gradient(ellipse at 32% 6%, rgba(255, 234, 246, 0.9) 0 0.34rem, transparent 0.38rem) 160px -420px / 360px 420px;
-  animation: sakuraPetalsFall 6.5s linear infinite;
+    url("/games/wheel/assets/images/branchLeft.png") left top / clamp(180px, 26vw, 460px) auto no-repeat,
+    url("/games/wheel/assets/images/branchRight.png") right top / clamp(180px, 26vw, 460px) auto no-repeat;
 }
 
 body.theme-slots {
-  background: linear-gradient(180deg, #6ecfff 0%, #bfefff 42%, #f7f3e7 100%);
+  background:
+    linear-gradient(180deg, rgba(7, 12, 35, 0.18), rgba(7, 8, 22, 0.46)),
+    url("/games/slots/assets/images/background.jpeg") center center / cover no-repeat fixed;
 }
 
 body.theme-slots::before {
   background:
-    radial-gradient(circle at 50% 16%, rgba(255, 245, 194, 0.78), transparent 13rem),
-    linear-gradient(180deg, transparent 0 54%, rgba(255, 255, 255, 0.42));
+    radial-gradient(circle at 50% 16%, rgba(255, 222, 116, 0.28), transparent 14rem),
+    linear-gradient(180deg, rgba(6, 8, 24, 0.22), rgba(8, 8, 26, 0.58));
 }
 
 body.theme-slots::after {
-  background: url("/games/slots/assets/images/olympus-frame.svg") center bottom / cover no-repeat;
-  opacity: 0.84;
+  background: linear-gradient(180deg, transparent 0 62%, rgba(6, 8, 22, 0.42));
+  opacity: 1;
 }
 
 body.casino-win {
@@ -357,6 +360,7 @@ body.theme-wheel .game-stage {
   display: grid;
   gap: 2px;
   place-items: center;
+  justify-items: center;
   pointer-events: none;
   color: #fff9e8;
   text-align: center;
@@ -373,16 +377,20 @@ body.theme-wheel .game-stage {
   font-weight: 950;
   line-height: 0.9;
   letter-spacing: 0.02em;
+  width: 64px;
+  text-align: center;
 }
 
 .label-caption {
   display: block;
   max-width: 64px;
+  width: 64px;
   color: #fff7df;
   font-size: 9px;
   font-weight: 950;
   line-height: 1;
   letter-spacing: 0.08em;
+  text-align: center;
 }
 
 .label-1 { transform: rotate(0deg) translateY(-92px) rotate(90deg); }
@@ -1492,30 +1500,19 @@ h2 {
 @keyframes sakuraPetalsFall {
   0% {
     background-position:
-      center top,
-      center top,
-      center top,
-      0 -260px,
-      80px -340px,
-      160px -420px;
-  }
-  50% {
-    background-position:
-      center top,
-      center top,
-      center top,
-      48px 38vh,
-      16px 28vh,
-      220px 44vh;
+      12px 18px,
+      44px 62px,
+      0 0,
+      80px 40px,
+      160px 120px;
   }
   100% {
     background-position:
-      center top,
-      center top,
-      center top,
-      120px 106vh,
-      -90px 104vh,
-      280px 108vh;
+      12px 18px,
+      44px 62px,
+      42px 260px,
+      16px 380px,
+      244px 540px;
   }
 }
 
@@ -1765,10 +1762,12 @@ h2 {
 
   .label-number {
     font-size: 18px;
+    width: 56px;
   }
 
   .label-caption {
     max-width: 62px;
+    width: 56px;
     font-size: 8px;
     letter-spacing: 0.06em;
   }
