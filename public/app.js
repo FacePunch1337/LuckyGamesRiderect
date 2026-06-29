@@ -30,6 +30,11 @@ const wheelIcons = ["🏆", "🎁", "💸", "🎟️", "⭐", "🍋", "🔑", "�
 const slotSymbols = ["7️⃣", "💎", "🍒", "🔔", "⭐", "🍋"];
 const slotStripSymbols = [...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols];
 const names = ["William", "Olivia", "James", "Sarah", "Henry", "Emma"];
+const wheelAudioPaths = {
+  background: "/games/wheel/assets/audio/background.mp3",
+  spin: "/games/wheel/assets/audio/spin.mp3",
+  win: "/games/wheel/assets/audio/win.mp3",
+};
 
 const gameStage = document.querySelector("#gameStage");
 const title = document.querySelector("#app-title");
@@ -56,9 +61,58 @@ let balloonScale = 1;
 let balloonGrowth = null;
 let balloonResolved = false;
 let winCloseTimer = null;
+let audioUnlocked = false;
+let wheelSounds = null;
+let soundMuted = localStorage.getItem("luckySoundMuted") === "true";
 
 function timeout(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function getWheelSounds() {
+  if (wheelSounds) {
+    return wheelSounds;
+  }
+
+  wheelSounds = {
+    background: new Audio(wheelAudioPaths.background),
+    spin: new Audio(wheelAudioPaths.spin),
+    win: new Audio(wheelAudioPaths.win),
+  };
+  wheelSounds.background.loop = true;
+  wheelSounds.background.volume = 0.32;
+  wheelSounds.spin.volume = 0.72;
+  wheelSounds.win.volume = 0.88;
+  Object.values(wheelSounds).forEach((audio) => {
+    audio.muted = soundMuted;
+  });
+  return wheelSounds;
+}
+
+function safePlay(audio) {
+  if (!audio) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
+
+function unlockWheelAudio() {
+  if (selectedGame.id !== "wheel") return;
+  const sounds = getWheelSounds();
+  audioUnlocked = true;
+  sounds.background.play().catch(() => {});
+}
+
+function toggleSound() {
+  soundMuted = !soundMuted;
+  localStorage.setItem("luckySoundMuted", String(soundMuted));
+  const sounds = getWheelSounds();
+  Object.values(sounds).forEach((audio) => {
+    audio.muted = soundMuted;
+  });
+  document.querySelector("#soundButton").textContent = soundMuted ? "Sound Off" : "Sound On";
+  if (!soundMuted) {
+    unlockWheelAudio();
+  }
 }
 
 async function resolveClientGeo() {
@@ -164,6 +218,9 @@ function showWinCelebration(label) {
   winOverlay.classList.add("is-visible");
   document.body.classList.add("modal-open");
   document.body.classList.add("casino-win");
+  if (selectedGame.id === "wheel" && audioUnlocked) {
+    safePlay(getWheelSounds().win);
+  }
   launchConfetti();
 
   window.clearTimeout(winCloseTimer);
@@ -196,17 +253,20 @@ function buildWheel() {
         <button class="wheel-center" id="spinCenter" type="button" aria-label="Spin the wheel"></button>
       </div>
     </div>
+    <button class="sound-button" id="soundButton" type="button">${soundMuted ? "Sound Off" : "Sound On"}</button>
     <button class="spin-button" id="gameButton" type="button">Spin</button>
   `;
 
   document.querySelector("#gameButton").addEventListener("click", playWheel);
   document.querySelector("#spinCenter").addEventListener("click", playWheel);
+  document.querySelector("#soundButton").addEventListener("click", toggleSound);
 }
 
 function playWheel() {
   if (isBusy) return;
   isBusy = true;
   attemptsUsed += 1;
+  unlockWheelAudio();
 
   const wheel = document.querySelector("#wheel");
   const button = document.querySelector("#gameButton");
@@ -219,6 +279,9 @@ function playWheel() {
 
   button.disabled = true;
   button.textContent = "Spinning...";
+  if (audioUnlocked) {
+    safePlay(getWheelSounds().spin);
+  }
   wheelRotation += (5 + Math.floor(Math.random() * 3)) * 360 + targetDelta;
   wheel.style.transform = `rotate(${wheelRotation}deg)`;
 
