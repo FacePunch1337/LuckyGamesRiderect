@@ -52,7 +52,6 @@ const title = document.querySelector("#app-title");
 const eyebrow = document.querySelector("#gameEyebrow");
 const subtitle = document.querySelector("#gameSubtitle");
 const attemptsInfo = document.querySelector("#attemptsInfo");
-const winsList = document.querySelector("#winsList");
 const winOverlay = document.querySelector("#winOverlay");
 const winPrize = document.querySelector("#winPrize");
 const confettiLayer = document.querySelector("#confettiLayer");
@@ -125,6 +124,25 @@ function setButtonLabel(button, label) {
   button.textContent = label;
   button.dataset.label = label;
   button.setAttribute("aria-label", label);
+}
+
+function applyGameButtonAsset(button) {
+  const imagePath = `/games/${selectedGame.id}/assets/images/button.png`;
+  const image = new Image();
+
+  image.onload = () => {
+    button.classList.add("has-image-button");
+    button.style.setProperty("--button-image", `url("${imagePath}")`);
+    button.style.setProperty("--button-aspect", `${image.naturalWidth} / ${image.naturalHeight}`);
+  };
+
+  image.onerror = () => {
+    button.classList.remove("has-image-button");
+    button.style.removeProperty("--button-image");
+    button.style.removeProperty("--button-aspect");
+  };
+
+  image.src = imagePath;
 }
 
 function safePlay(audio) {
@@ -221,16 +239,6 @@ async function trackRedirectAndGo() {
   }, 1800);
 }
 
-function renderWins() {
-  const prizes = ["£500", "Free Spins", "Cashback", "£320", "VIP Bonus", "£750"];
-  const rows = Array.from({ length: 9 }, (_, index) => {
-    const name = names[(index + attemptsUsed) % names.length];
-    const prize = prizes[(index * 2 + attemptsUsed) % prizes.length];
-    return `<div class="win-row"><span>🏆 ${name}</span><strong>Won ${prize}</strong></div>`;
-  });
-  winsList.innerHTML = rows.join("");
-}
-
 function updateAttemptsInfo() {
   const mod = attemptsUsed % redirectEvery;
   const remaining = attemptsUsed > 0 && mod === 0 ? 0 : redirectEvery - mod;
@@ -319,7 +327,9 @@ function buildWheel() {
     <button class="spin-button" id="gameButton" type="button" data-label="Spin" aria-label="Spin">Spin</button>
   `;
 
-  document.querySelector("#gameButton").addEventListener("click", playWheel);
+  const button = document.querySelector("#gameButton");
+  applyGameButtonAsset(button);
+  button.addEventListener("click", playWheel);
   document.querySelector("#spinCenter").addEventListener("click", playWheel);
 }
 
@@ -348,7 +358,6 @@ function playWheel() {
   wheel.style.transform = `rotate(${wheelRotation}deg)`;
 
   window.setTimeout(() => {
-    renderWins();
     showWinCelebration(wheelPrizes[prizeIndex]);
     button.disabled = false;
     setButtonLabel(button, "Spin");
@@ -384,7 +393,9 @@ function buildSlots() {
     </div>
     <button class="spin-button" id="gameButton" type="button" data-label="Pull Lever" aria-label="Pull Lever">Pull Lever</button>
   `;
-  document.querySelector("#gameButton").addEventListener("click", playSlots);
+  const button = document.querySelector("#gameButton");
+  applyGameButtonAsset(button);
+  button.addEventListener("click", playSlots);
 }
 
 function playSlots() {
@@ -438,7 +449,6 @@ function playSlots() {
     reels.forEach((reel) => {
       reel.classList.remove("has-stopped");
     });
-    renderWins();
     machine.classList.remove("slot-spinning");
     if (isJackpot) {
       machine.classList.add("slot-win");
@@ -483,6 +493,7 @@ function buildPlane() {
 
   const button = document.querySelector("#gameButton");
   const pad = document.querySelector("#planePad");
+  applyGameButtonAsset(button);
   resetPlanePosition();
   [button, pad].forEach((element) => {
     element.addEventListener("pointerdown", startPlane);
@@ -690,7 +701,6 @@ function finishPlane(isJackpot) {
     safePlay(getGameSounds()?.explosion);
   }
 
-  renderWins();
   if (isJackpot) {
     planeMultiplier = planeTargetMultiplier;
     showWinCelebration(`✈ x${planeMultiplier.toFixed(2)} Jackpot`);
@@ -721,7 +731,6 @@ function explodePlane(plane, sky) {
 
 function initGame() {
   setHeader();
-  renderWins();
   updateAttemptsInfo();
   track("/api/analytics/page-view", { game: selectedGame.id });
 

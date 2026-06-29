@@ -13,6 +13,10 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <video class="wheel-video-bg" aria-hidden="true" autoplay muted loop playsinline preload="auto">
+      <source src="/games/wheel/assets/images/background.mp4" type="video/mp4" />
+    </video>
+
     <main class="app">
       <section class="hero-panel" aria-labelledby="app-title">
         <p class="eyebrow" id="gameEyebrow">Lucky game</p>
@@ -23,10 +27,6 @@
         <section class="game-stage" id="gameStage" aria-live="polite"></section>
       </section>
 
-      <section class="wins-panel" aria-labelledby="wins-title">
-        <h2 id="wins-title">Recent wins</h2>
-        <div class="wins-list" id="winsList"></div>
-      </section>
     </main>
 
     <div class="win-overlay" id="winOverlay" aria-live="polite" aria-hidden="true">
