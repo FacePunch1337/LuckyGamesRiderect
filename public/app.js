@@ -66,6 +66,7 @@ localStorage.setItem("luckySessionId", sessionId);
 const requestedGameRaw = new URLSearchParams(window.location.search).get("game");
 const requestedGame = requestedGameRaw === "balloon" ? "plane" : requestedGameRaw;
 const selectedGame = games.find((game) => game.id === requestedGame) || games[Math.floor(Math.random() * games.length)];
+document.body.classList.add("game-intro-active");
 let clientGeo = null;
 let clientGeoPromise = resolveClientGeo();
 let attemptsUsed = 0;
@@ -451,9 +452,9 @@ function buildPlane() {
   gameStage.innerHTML = `
     <div class="plane-game" id="planePad">
       <div class="sky-track" id="skyTrack">
-        <div class="cloud cloud-1"></div>
-        <div class="cloud cloud-2"></div>
-        <div class="cloud cloud-3"></div>
+        <img class="cloud cloud-1" src="/games/plane/assets/images/claude.png" alt="" aria-hidden="true">
+        <img class="cloud cloud-2" src="/games/plane/assets/images/claude.png" alt="" aria-hidden="true">
+        <img class="cloud cloud-3" src="/games/plane/assets/images/claude.png" alt="" aria-hidden="true">
         <div class="multiplier-badge" id="planeMultiplier">x1.00</div>
         <div class="plane" id="plane">
           <img src="/games/plane/assets/images/plane-cropped.png" alt="Plane" draggable="false">
@@ -473,6 +474,51 @@ function buildPlane() {
     element.addEventListener("pointerleave", releasePlane);
     element.addEventListener("pointercancel", releasePlane);
   });
+
+}
+
+function runGameIntro() {
+  const intro = selectedGame.id === "plane" ? createPlaneIntro() : createBasicGameIntro();
+  document.body.appendChild(intro);
+
+  window.setTimeout(() => {
+    document.body.classList.remove("game-intro-active");
+    intro.classList.add("is-out");
+  }, selectedGame.id === "plane" ? 2450 : 1250);
+
+  window.setTimeout(() => {
+    intro.remove();
+  }, selectedGame.id === "plane" ? 3050 : 1850);
+}
+
+function createPlaneIntro() {
+  const intro = document.createElement("div");
+  intro.className = "game-intro plane-intro";
+  intro.setAttribute("aria-hidden", "true");
+  intro.innerHTML = `
+    <div class="plane-intro-sky">
+      <img class="intro-cloud intro-cloud-left" src="/games/plane/assets/images/claude.png" alt="">
+      <img class="intro-cloud intro-cloud-right" src="/games/plane/assets/images/claude.png" alt="">
+      <img class="intro-cloud intro-cloud-top-left" src="/games/plane/assets/images/claude.png" alt="">
+      <img class="intro-cloud intro-cloud-top-right" src="/games/plane/assets/images/claude.png" alt="">
+      <img class="intro-plane" src="/games/plane/assets/images/introPlane.png" alt="">
+      <img class="intro-logo" src="/games/plane/assets/images/logo.png" alt="PlaneGG">
+    </div>
+  `;
+  return intro;
+}
+
+function createBasicGameIntro() {
+  const intro = document.createElement("div");
+  intro.className = `game-intro basic-intro basic-intro-${selectedGame.id}`;
+  intro.setAttribute("aria-hidden", "true");
+  intro.innerHTML = `
+    <div class="basic-intro-card">
+      <div class="basic-intro-icon">${selectedGame.id === "wheel" ? "🎡" : "777"}</div>
+      <strong>${selectedGame.title}</strong>
+    </div>
+  `;
+  return intro;
 }
 
 function resetPlanePosition() {
@@ -641,6 +687,7 @@ function initGame() {
   if (selectedGame.id === "wheel") buildWheel();
   if (selectedGame.id === "slots") buildSlots();
   if (selectedGame.id === "plane") buildPlane();
+  runGameIntro();
 }
 
 initGame();
