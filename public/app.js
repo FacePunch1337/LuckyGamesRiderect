@@ -494,12 +494,10 @@ function startPlane(event) {
 
   planeTicker = window.setInterval(() => {
     planeMultiplier = Math.min(planeMultiplier + (isJackpot ? 0.12 : 0.09), planeTargetMultiplier);
-    const progress = Math.min((planeMultiplier - 1) / 4, 1);
-    const x = 16 + progress * 202;
-    const y = 146 - progress * 112;
+    const bob = Math.sin(planeMultiplier * 5.2) * 10;
 
-    plane.style.transform = `translate(${x}px, ${y}px) rotate(-18deg)`;
-    badge.style.transform = `translate(${x + 12}px, ${y - 34}px)`;
+    plane.style.transform = `translate(136px, ${104 + bob}px) rotate(-8deg)`;
+    badge.style.transform = `translate(142px, ${64 + bob}px)`;
     badge.textContent = `x${planeMultiplier.toFixed(2)}`;
 
     if (isJackpot && planeMultiplier >= planeTargetMultiplier) {
@@ -549,8 +547,8 @@ function finishPlane(isJackpot) {
 
   window.setTimeout(() => {
     plane.classList.remove("crashed", "winner");
-    plane.style.transform = "translate(16px, 146px) rotate(-18deg)";
-    document.querySelector("#planeMultiplier").style.transform = "translate(28px, 112px)";
+    plane.style.transform = "translate(136px, 104px) rotate(-8deg)";
+    document.querySelector("#planeMultiplier").style.transform = "translate(142px, 64px)";
     document.querySelector("#planeMultiplier").textContent = "x1.00";
     status.textContent = "Hold to take off.";
     isBusy = false;
