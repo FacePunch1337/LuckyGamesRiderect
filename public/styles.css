@@ -504,11 +504,10 @@ h1 {
   border: 2px solid rgba(255, 218, 106, 0.5);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 70% 20%, rgba(255, 232, 125, 0.35), transparent 4rem),
-    linear-gradient(135deg, rgba(49, 208, 255, 0.28), rgba(39, 18, 82, 0.22) 46%, rgba(7, 8, 30, 0.86)),
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 42px);
+    radial-gradient(circle at 78% 18%, rgba(255, 247, 184, 0.9), rgba(255, 224, 88, 0.34) 4.2rem, transparent 8rem),
+    linear-gradient(180deg, #72d4ff 0%, #8edfff 38%, #d9f6ff 100%);
   box-shadow:
-    inset 0 -34px 42px rgba(5, 7, 24, 0.56),
+    inset 0 -42px 58px rgba(40, 135, 196, 0.2),
     0 18px 42px rgba(0, 0, 0, 0.3);
 }
 
@@ -518,16 +517,18 @@ h1 {
   position: absolute;
   inset: 0;
   background:
-    repeating-linear-gradient(135deg, transparent 0 32px, rgba(255, 255, 255, 0.11) 32px 34px, transparent 34px 74px);
+    radial-gradient(ellipse at 24% 24%, rgba(255, 255, 255, 0.5), transparent 6rem),
+    radial-gradient(ellipse at 68% 38%, rgba(255, 255, 255, 0.36), transparent 7rem);
   transform: translateX(0);
-  opacity: 0.42;
+  opacity: 0.5;
 }
 
 .sky-track::after {
   background:
-    radial-gradient(circle at 14% 72%, rgba(255, 189, 32, 0.25), transparent 3rem),
-    radial-gradient(circle at 82% 78%, rgba(255, 77, 109, 0.22), transparent 4rem);
-  opacity: 0.8;
+    radial-gradient(ellipse at 18% 76%, rgba(255, 255, 255, 0.56), transparent 4.8rem),
+    radial-gradient(ellipse at 72% 68%, rgba(255, 255, 255, 0.42), transparent 5.6rem),
+    linear-gradient(180deg, transparent 0 72%, rgba(255, 255, 255, 0.28));
+  opacity: 0.92;
 }
 
 .sky-track.is-flying::before {
@@ -611,8 +612,8 @@ h1 {
   place-items: center;
   width: 126px;
   height: 78px;
-  transform: translate(297px, 156px) rotate(-26deg);
-  transition: transform 0.055s linear;
+  transform: translate(297px, 156px) rotate(-15deg);
+  transition: transform 0.11s linear;
   filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.28)) drop-shadow(0 0 18px rgba(49, 208, 255, 0.52));
 }
 
@@ -627,7 +628,7 @@ h1 {
 
 .plane.crashed {
   transition: none;
-  animation: planeCrash 0.9s cubic-bezier(0.18, 0.02, 0.58, 1) forwards;
+  animation: planeCrash 1.25s cubic-bezier(0.2, 0.04, 0.48, 1) forwards;
 }
 
 .plane.winner {
@@ -1065,8 +1066,8 @@ h2 {
 }
 
 @keyframes skyRush {
-  from { transform: translate(0, 0); }
-  to { transform: translate(-128px, 128px); }
+  from { transform: translate(90px, -28px); }
+  to { transform: translate(-160px, 70px); }
 }
 
 @keyframes cloudRush {
@@ -1075,9 +1076,10 @@ h2 {
 }
 
 @keyframes planeCrash {
-  0% { transform: translate(var(--crash-x, 297px), var(--crash-y, 156px)) rotate(var(--crash-angle, -26deg)); opacity: 1; }
-  28% { transform: translate(var(--crash-mid-x, 297px), var(--crash-mid-y, 214px)) rotate(42deg); opacity: 1; }
-  100% { transform: translate(var(--crash-end-x, 297px), var(--crash-end-y, 306px)) rotate(112deg); opacity: 0.28; }
+  0% { transform: translate(var(--crash-x, 297px), var(--crash-y, 156px)) rotate(var(--crash-angle, -15deg)); opacity: 1; }
+  34% { transform: translate(var(--crash-mid-x, 297px), var(--crash-mid-y, 202px)) rotate(20deg); opacity: 1; }
+  68% { transform: translate(var(--crash-mid-x, 297px), calc(var(--crash-mid-y, 202px) + 34px)) rotate(39deg); opacity: 0.82; }
+  100% { transform: translate(var(--crash-end-x, 297px), var(--crash-end-y, 282px)) rotate(58deg); opacity: 0.35; }
 }
 
 @keyframes planeWin {
