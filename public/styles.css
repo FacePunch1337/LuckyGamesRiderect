@@ -38,6 +38,47 @@ body {
   pointer-events: none;
 }
 
+.sakura-petals {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sakura-petals::before,
+.sakura-petals::after {
+  content: "";
+  position: absolute;
+  left: -8vw;
+  top: -110vh;
+  width: 116vw;
+  height: 220vh;
+  background:
+    radial-gradient(ellipse at 10% 8%, rgba(255, 221, 241, 0.94) 0 0.42rem, transparent 0.48rem),
+    radial-gradient(ellipse at 34% 18%, rgba(255, 155, 206, 0.9) 0 0.34rem, transparent 0.4rem),
+    radial-gradient(ellipse at 72% 11%, rgba(255, 228, 246, 0.88) 0 0.36rem, transparent 0.42rem),
+    radial-gradient(ellipse at 88% 32%, rgba(255, 169, 214, 0.86) 0 0.44rem, transparent 0.5rem);
+  background-size: 320px 420px, 460px 540px, 390px 500px, 520px 620px;
+  background-position: 0 0, 90px 60px, 180px 120px, 260px 30px;
+  opacity: 0.88;
+  animation: sakuraPetalSheet 15s linear infinite;
+  will-change: transform;
+}
+
+.sakura-petals::after {
+  opacity: 0.62;
+  filter: blur(0.3px);
+  transform: translate3d(3vw, -55vh, 0) scale(0.76);
+  animation-duration: 22s;
+  animation-delay: -11s;
+}
+
+body.theme-wheel .sakura-petals {
+  display: block;
+}
+
 body.theme-wheel .wheel-video-bg {
   opacity: 1;
 }
@@ -96,12 +137,8 @@ body.theme-wheel {
 body.theme-wheel::before {
   background:
     radial-gradient(circle, rgba(255,255,255,0.95) 0 1px, transparent 1.4px) 12px 18px / 90px 90px,
-    radial-gradient(circle, rgba(255,194,232,0.78) 0 1px, transparent 1.5px) 44px 62px / 132px 132px,
-    radial-gradient(ellipse at 12% 8%, rgba(255, 215, 238, 0.95) 0 0.46rem, transparent 0.5rem) 0 0 / 220px 260px repeat,
-    radial-gradient(ellipse at 62% 14%, rgba(255, 142, 197, 0.84) 0 0.36rem, transparent 0.4rem) 80px 40px / 280px 340px repeat,
-    radial-gradient(ellipse at 32% 10%, rgba(255, 234, 246, 0.86) 0 0.32rem, transparent 0.36rem) 160px 120px / 360px 420px repeat;
-  opacity: 0.72;
-  animation: sakuraPetalsFall 7.2s linear infinite;
+    radial-gradient(circle, rgba(255,194,232,0.78) 0 1px, transparent 1.5px) 44px 62px / 132px 132px;
+  opacity: 0.64;
 }
 
 body.theme-wheel::after {
@@ -246,28 +283,29 @@ body.theme-wheel h1 {
 
 body.theme-wheel .attempts-info {
   margin-top: 6px;
-  margin-bottom: 0;
+  margin-bottom: clamp(26px, 4.4vh, 54px);
 }
 
 .game-stage {
   width: 100%;
-  min-height: 415px;
-  display: grid;
-  align-content: center;
-  justify-items: center;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.4vh, 16px);
 }
 
 body.theme-wheel .game-stage {
-  min-height: 480px;
-  align-content: center;
-  gap: 18px;
+  min-height: 0;
+  gap: clamp(10px, 1.8vh, 18px);
 }
 
 .wheel-wrap {
   position: relative;
-  width: min(82vw, 332px);
+  width: clamp(260px, min(82vw, 45vh), 430px);
   aspect-ratio: 1;
-  margin: 28px auto 30px;
+  margin: 0 auto;
   display: grid;
   place-items: center;
 }
@@ -495,10 +533,11 @@ body.theme-wheel .game-stage {
 }
 
 .spin-button.has-image-button {
-  width: clamp(340px, 46vw, 700px);
+  width: clamp(230px, 22vw, 360px);
   min-height: 0;
   height: auto;
   aspect-ratio: var(--button-aspect, 3 / 2);
+  margin-top: clamp(-28px, -2.4vh, -8px);
   border-radius: 0;
   background: var(--button-image) center / contain no-repeat;
   box-shadow: none;
@@ -1534,6 +1573,11 @@ h2 {
   }
 }
 
+@keyframes sakuraPetalSheet {
+  0% { transform: translate3d(-2vw, -4vh, 0) rotate(-1deg); }
+  100% { transform: translate3d(4vw, 106vh, 0) rotate(2deg); }
+}
+
 @keyframes buttonPressPop {
   0% { transform: translateZ(0) scale(1); }
   45% { transform: translateZ(0) scale(0.9); }
@@ -1750,21 +1794,19 @@ h2 {
     width: 62vw;
   }
 
-  .game-stage {
-    min-height: 380px;
-  }
-
   body.theme-wheel .game-stage {
-    min-height: 450px;
-    gap: 14px;
+    min-height: 0;
+    gap: 12px;
   }
 
   body.theme-wheel .wheel-wrap {
-    margin: 24px auto 28px;
+    width: clamp(250px, 82vw, 340px);
+    margin: 0 auto;
   }
 
   .spin-button.has-image-button {
-    width: min(96vw, 560px);
+    width: min(82vw, 330px);
+    margin-top: -18px;
   }
 
   .plane-game {

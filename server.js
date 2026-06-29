@@ -290,6 +290,11 @@ async function getAnalyticsExport() {
   };
 }
 
+async function resetAnalyticsTables() {
+  const db = await getPool();
+  await db.query("TRUNCATE TABLE page_views, redirects RESTART IDENTITY");
+}
+
 function requireAdmin(req, res, next) {
   if (!adminPassword) {
     return next();
@@ -381,9 +386,11 @@ function toEventsCsv(exportData) {
   return [header, ...pageViewRows, ...redirectRows].map((row) => row.map(csvValue).join(",")).join("\n");
 }
 
-app.get("/admin", requireAdmin, async (_req, res) => {
+app.get("/admin", requireAdmin, async (req, res) => {
   try {
     const summary = await getAnalyticsSummary();
+    const adminKeyQuery = adminPassword ? `?key=${encodeURIComponent(adminPassword)}` : "";
+    const wasReset = req.query.reset === "1";
     res.type("html").send(`<!doctype html>
 <html lang="en">
 <head>
@@ -397,8 +404,11 @@ app.get("/admin", requireAdmin, async (_req, res) => {
     .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
     .topbar h1 { margin: 0; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .button { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 8px; background: #ffbd20; color: #111827; font-weight: 800; text-decoration: none; }
+    .button { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: #ffbd20; color: #111827; font: inherit; font-weight: 800; text-decoration: none; cursor: pointer; }
     .button.secondary { background: #263451; color: #f8fafc; border: 1px solid rgba(255, 189, 32, .25); }
+    .button.danger { background: #e11d48; color: #fff; }
+    .inline-form { margin: 0; }
+    .notice { margin: 0 0 18px; padding: 12px 14px; border: 1px solid rgba(34, 197, 94, .45); border-radius: 8px; background: rgba(34, 197, 94, .14); color: #bbf7d0; font-weight: 800; }
     .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
     .card, table { background: #151d35; border: 1px solid rgba(255, 189, 32, .22); border-radius: 8px; }
     .card { padding: 22px; }
@@ -416,10 +426,14 @@ app.get("/admin", requireAdmin, async (_req, res) => {
     <div class="topbar">
       <h1>Lucky Games Analytics</h1>
       <div class="actions">
-        <a class="button" href="/admin/export.json${adminPassword ? `?key=${encodeURIComponent(adminPassword)}` : ""}" download>Download JSON</a>
-        <a class="button secondary" href="/admin/export.csv${adminPassword ? `?key=${encodeURIComponent(adminPassword)}` : ""}" download>Download CSV</a>
+        <a class="button" href="/admin/export.json${adminKeyQuery}" download>Download JSON</a>
+        <a class="button secondary" href="/admin/export.csv${adminKeyQuery}" download>Download CSV</a>
+        <form class="inline-form" method="post" action="/admin/drop${adminKeyQuery}" onsubmit="return confirm('Drop all analytics rows from page_views and redirects? This cannot be undone.');">
+          <button class="button danger" type="submit">Drop analytics DB</button>
+        </form>
       </div>
     </div>
+    ${wasReset ? '<p class="notice">Analytics tables were reset successfully.</p>' : ""}
     <div class="cards">
       <div class="card"><span>Total page visits</span><b>${summary.totalViews}</b></div>
       <div class="card"><span>Total redirects</span><b>${summary.totalRedirects}</b></div>
@@ -445,6 +459,16 @@ app.get("/admin", requireAdmin, async (_req, res) => {
 </html>`);
   } catch (error) {
     res.status(500).send(`Admin error: ${error.message}`);
+  }
+});
+
+app.post("/admin/drop", requireAdmin, async (_req, res) => {
+  try {
+    await resetAnalyticsTables();
+    const adminKeyQuery = adminPassword ? `?key=${encodeURIComponent(adminPassword)}&reset=1` : "?reset=1";
+    res.redirect(`/admin${adminKeyQuery}`);
+  } catch (error) {
+    res.status(500).send(`Drop error: ${error.message}`);
   }
 });
 
