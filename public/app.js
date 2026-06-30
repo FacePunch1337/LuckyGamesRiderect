@@ -31,7 +31,13 @@ const games = [
 ];
 
 const wheelPrizes = ["50 Free Spins", "5 Free Spins", "10 Free Spins", "15 Free Spins", "20 Free Spins", "25 Free Spins", "30 Free Spins", "40 Free Spins"];
-const slotSymbols = ["7️⃣", "💎", "🍒", "🔔", "⭐", "🍋"];
+const slotSymbols = [
+  { id: "seven", label: "Seven", src: "/games/slots/assets/images/Seven.png" },
+  { id: "cherry", label: "Cherry", src: "/games/slots/assets/images/Cherry.png" },
+  { id: "grape", label: "Grape", src: "/games/slots/assets/images/Grape.png" },
+  { id: "watermelon", label: "Watermelon", src: "/games/slots/assets/images/Watermelon.png" },
+  { id: "lemon", label: "Lemon", src: "/games/slots/assets/images/Lemon.png" },
+];
 const slotStripSymbols = [...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols];
 const names = ["William", "Olivia", "James", "Sarah", "Henry", "Emma"];
 const gameAudioFiles = {
@@ -83,6 +89,9 @@ let winCloseTimer = null;
 let audioUnlocked = false;
 let gameSounds = null;
 let pendingMusicStart = false;
+let slotSpinSoundTimer = null;
+let slotSpinSoundStopTimer = null;
+let slotSpinSoundStartedAt = 0;
 
 function timeout(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -157,6 +166,53 @@ function stopSound(audio) {
   if (!audio) return;
   audio.pause();
   audio.currentTime = 0;
+}
+
+function playPitchedOneShot(source, playbackRate, volume = 0.68) {
+  if (!source) return;
+  const tick = source.cloneNode(true);
+  tick.loop = false;
+  tick.volume = volume;
+  tick.playbackRate = playbackRate;
+  tick.preservesPitch = false;
+  tick.webkitPreservesPitch = false;
+  tick.mozPreservesPitch = false;
+  tick.currentTime = 0;
+  tick.play().catch(() => {});
+}
+
+function stopSlotSpinSound() {
+  window.clearTimeout(slotSpinSoundTimer);
+  window.clearTimeout(slotSpinSoundStopTimer);
+  slotSpinSoundTimer = null;
+  slotSpinSoundStopTimer = null;
+}
+
+function startSlotSpinSound(totalDuration = 1680) {
+  if (!audioUnlocked) return;
+  const source = getGameSounds()?.action;
+  if (!source) return;
+
+  stopSlotSpinSound();
+  slotSpinSoundStartedAt = performance.now();
+
+  const tick = () => {
+    const elapsed = performance.now() - slotSpinSoundStartedAt;
+    const progress = Math.min(elapsed / totalDuration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 2);
+    const playbackRate = 1.24 - easeOut * 0.42;
+    const interval = 42 + easeOut * 82;
+    const volume = 0.72 - progress * 0.16;
+
+    playPitchedOneShot(source, playbackRate, volume);
+
+    if (progress < 1) {
+      slotSpinSoundTimer = window.setTimeout(tick, interval);
+    }
+  };
+
+  tick();
+  slotSpinSoundStopTimer = window.setTimeout(stopSlotSpinSound, totalDuration + 60);
 }
 
 function unlockGameAudio() {
@@ -381,7 +437,7 @@ function buildSlots() {
             (index) => `
               <div class="reel-window" data-reel="${index}">
                 <div class="reel-strip">
-                  ${slotStripSymbols.map((symbol) => `<span>${symbol}</span>`).join("")}
+                  ${slotStripSymbols.map(renderSlotSymbol).join("")}
                 </div>
               </div>
             `
@@ -396,6 +452,20 @@ function buildSlots() {
   const button = document.querySelector("#gameButton");
   applyGameButtonAsset(button);
   button.addEventListener("click", playSlots);
+  requestAnimationFrame(syncSlotReelMetrics);
+}
+
+function renderSlotSymbol(symbol) {
+  return `<span class="slot-symbol" data-symbol="${symbol.id}"><img src="${symbol.src}" alt="${symbol.label}" draggable="false" /></span>`;
+}
+
+function syncSlotReelMetrics() {
+  document.querySelectorAll(".reel-window").forEach((reel) => {
+    const strip = reel.querySelector(".reel-strip");
+    if (!strip) return;
+    const reelCellHeight = reel.clientHeight || 88;
+    strip.style.setProperty("--reel-cell-height", `${reelCellHeight}px`);
+  });
 }
 
 function playSlots() {
@@ -410,39 +480,40 @@ function playSlots() {
   const message = document.querySelector("#slotMessage");
   const isJackpot = attemptsUsed % redirectEvery === 0;
   const result = isJackpot
-    ? ["7️⃣", "7️⃣", "7️⃣"]
+    ? [slotSymbols[0], slotSymbols[0], slotSymbols[0]]
     : getNonWinningSlotResult();
 
   button.disabled = true;
   setButtonLabel(button, "Rolling...");
   message.textContent = "Reels are spinning...";
   unlockGameAudio();
-  if (audioUnlocked) {
-    safePlay(getGameSounds()?.action);
-  }
   machine.classList.remove("slot-win");
   machine.classList.add("slot-spinning");
+  syncSlotReelMetrics();
+  startSlotSpinSound(1680);
 
   reels.forEach((reel, index) => {
     const strip = reel.querySelector(".reel-strip");
-    const symbolIndex = slotSymbols.indexOf(result[index]);
+    const symbolIndex = slotSymbols.findIndex((symbol) => symbol.id === result[index].id);
     const finalIndex = slotSymbols.length * 3 + symbolIndex;
-    const finalOffset = finalIndex * 88;
+    const reelCellHeight = reel.clientHeight || 88;
+    const finalOffset = finalIndex * reelCellHeight;
 
     strip.style.transition = "none";
+    strip.style.setProperty("--reel-cell-height", `${reelCellHeight}px`);
     strip.style.transform = "translateY(0)";
     strip.getBoundingClientRect();
     reel.classList.add("is-spinning");
 
     window.setTimeout(() => {
-      strip.style.transition = `transform ${1.65 + index * 0.38}s cubic-bezier(0.12, 0.82, 0.14, 1)`;
+      strip.style.transition = `transform ${0.95 + index * 0.22}s cubic-bezier(0.12, 0.82, 0.14, 1)`;
       strip.style.transform = `translateY(-${finalOffset}px)`;
     }, 40 + index * 120);
 
     window.setTimeout(() => {
       reel.classList.remove("is-spinning");
       reel.classList.add("has-stopped");
-    }, 1900 + index * 430);
+    }, 1160 + index * 260);
   });
 
   window.setTimeout(() => {
@@ -450,10 +521,11 @@ function playSlots() {
       reel.classList.remove("has-stopped");
     });
     machine.classList.remove("slot-spinning");
+    stopSlotSpinSound();
     if (isJackpot) {
       machine.classList.add("slot-win");
       message.textContent = "Triple 7 jackpot unlocked!";
-      showWinCelebration("🏆 Triple 7 Jackpot");
+      showWinCelebration("Triple 7 Jackpot");
     } else {
       message.textContent = "No match. Try again.";
     }
@@ -461,14 +533,16 @@ function playSlots() {
     setButtonLabel(button, "Pull Lever");
     isBusy = false;
     if (isJackpot) trackRedirectAndGo();
-  }, 3300);
+  }, 2050);
 }
 
 function getNonWinningSlotResult() {
-  const result = Array.from({ length: 3 }, () => slotSymbols[1 + Math.floor(Math.random() * (slotSymbols.length - 1))]);
+  const fruitSymbols = slotSymbols.slice(1);
+  const result = Array.from({ length: 3 }, () => fruitSymbols[Math.floor(Math.random() * fruitSymbols.length)]);
 
-  if (result[0] === result[1] && result[1] === result[2]) {
-    result[2] = slotSymbols[(slotSymbols.indexOf(result[2]) + 1) % slotSymbols.length] || "🍋";
+  if (result[0].id === result[1].id && result[1].id === result[2].id) {
+    const currentIndex = fruitSymbols.findIndex((symbol) => symbol.id === result[2].id);
+    result[2] = fruitSymbols[(currentIndex + 1) % fruitSymbols.length];
   }
 
   return result;
@@ -741,3 +815,4 @@ function initGame() {
 }
 
 initGame();
+window.addEventListener("resize", syncSlotReelMetrics);
