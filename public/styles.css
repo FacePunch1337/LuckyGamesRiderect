@@ -128,11 +128,22 @@ body.theme-plane {
 }
 
 body.theme-plane::before {
-  background:
-    url("/games/plane/assets/images/claude-clean.png") -8vw 16vh / min(38vw, 360px) auto no-repeat,
-    url("/games/plane/assets/images/claude-clean.png") 76vw 10vh / min(32vw, 320px) auto no-repeat,
-    url("/games/plane/assets/images/claude-clean.png") 18vw 74vh / min(28vw, 280px) auto no-repeat;
+  background-image:
+    url("/games/plane/assets/images/claude-clean.png"),
+    url("/games/plane/assets/images/claude-clean.png"),
+    url("/games/plane/assets/images/claude-clean.png");
+  background-position:
+    -8vw 16vh,
+    76vw 10vh,
+    18vw 74vh;
+  background-size:
+    min(38vw, 360px) auto,
+    min(32vw, 320px) auto,
+    min(28vw, 280px) auto;
+  background-repeat: no-repeat;
   opacity: 0.82;
+  animation: planePageCloudParallax 22s ease-in-out infinite alternate;
+  will-change: background-position;
 }
 
 body.theme-plane::after {
@@ -1193,10 +1204,6 @@ body.theme-wheel .spin-button.has-image-button {
   opacity: 0.92;
 }
 
-.sky-track.is-flying::before {
-  animation: skyRush 0.36s linear infinite;
-}
-
 .cloud {
   position: absolute;
   width: clamp(110px, 18vw, 180px);
@@ -1238,8 +1245,33 @@ body.theme-wheel .spin-button.has-image-button {
   transform: scale(0.62);
 }
 
-.is-flying .cloud {
-  animation: cloudRush 0.62s linear infinite;
+.plane-trail {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.plane-trail path {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#planeTrailGlow {
+  stroke: rgba(255, 236, 138, 0.52);
+  stroke-width: 7px;
+  filter: blur(2px);
+}
+
+#planeTrail {
+  stroke: rgba(255, 255, 255, 0.88);
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 8px rgba(255, 224, 90, 0.74));
 }
 
 .multiplier-badge {
@@ -1271,8 +1303,9 @@ body.theme-wheel .spin-button.has-image-button {
   width: 126px;
   height: 78px;
   transform: translate(297px, 156px) rotate(-30deg);
-  transition: transform 0.04s linear;
-  filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.28)) drop-shadow(0 0 18px rgba(49, 208, 255, 0.52));
+  transition: none;
+  will-change: transform;
+  filter: none;
 }
 
 .plane img {
@@ -1862,6 +1895,21 @@ h2 {
 @keyframes cloudRush {
   from { transform: translate(220px, -110px) scale(1); }
   to { transform: translate(-420px, 210px) scale(1); }
+}
+
+@keyframes planePageCloudParallax {
+  from {
+    background-position:
+      -8vw 16vh,
+      76vw 10vh,
+      18vw 74vh;
+  }
+  to {
+    background-position:
+      -3vw 18vh,
+      72vw 13vh,
+      23vw 71vh;
+  }
 }
 
 @keyframes planeBlastPlane {

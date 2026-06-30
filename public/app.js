@@ -65,6 +65,12 @@ const gameAudioFiles = {
     action: "/games/slots/assets/audio/spin.mp3",
     win: "/games/slots/assets/audio/win.mp3",
   },
+  plane: {
+    background: "/games/plane/assets/audio/background.mp3",
+    explosion: "/games/plane/assets/audio/bang.mp3",
+    win: "/games/plane/assets/audio/win.mp3",
+    scoreTick: "/games/plane/assets/audio/scoreTick.mp3",
+  },
 };
 
 const gameStage = document.querySelector("#gameStage");
@@ -100,6 +106,12 @@ let planeTargetMultiplier = 2.1;
 let planeProgress = 0;
 let lastPlaneMotion = null;
 let planeStartedAt = 0;
+let planePath = null;
+let planeLastAngle = 0;
+let planeRenderX = null;
+let planeRenderY = null;
+let planeLastScoreTickValue = 0;
+let planeLastScoreTickAt = 0;
 let winCloseTimer = null;
 let audioUnlocked = false;
 let gameSounds = null;
@@ -123,21 +135,38 @@ function getGameSounds() {
     return gameSounds;
   }
 
-  gameSounds = {
-    background: new Audio(files.background),
-    action: new Audio(files.action),
-    win: new Audio(files.win),
-  };
+  gameSounds = {};
+  if (files.background) {
+    gameSounds.background = new Audio(files.background);
+  }
+  if (files.action) {
+    gameSounds.action = new Audio(files.action);
+  }
+  if (files.win) {
+    gameSounds.win = new Audio(files.win);
+  }
   if (files.explosion) {
     gameSounds.explosion = new Audio(files.explosion);
   }
-  gameSounds.background.loop = true;
-  gameSounds.action.loop = Boolean(files.loopAction);
-  gameSounds.background.volume = 0.32;
-  gameSounds.action.volume = files.actionVolume || 0.72;
-  gameSounds.win.volume = 0.88;
+  if (files.scoreTick) {
+    gameSounds.scoreTick = new Audio(files.scoreTick);
+  }
+  if (gameSounds.background) {
+    gameSounds.background.loop = true;
+    gameSounds.background.volume = 0.32;
+  }
+  if (gameSounds.action) {
+    gameSounds.action.loop = Boolean(files.loopAction);
+    gameSounds.action.volume = files.actionVolume || 0.72;
+  }
+  if (gameSounds.win) {
+    gameSounds.win.volume = 0.88;
+  }
   if (gameSounds.explosion) {
     gameSounds.explosion.volume = 0.9;
+  }
+  if (gameSounds.scoreTick) {
+    gameSounds.scoreTick.volume = 0.9;
   }
   Object.values(gameSounds).forEach((audio) => {
     audio.preload = "auto";
@@ -199,6 +228,31 @@ function playSlotSpinTick(source, volume = 0.68) {
   tick.volume = volume;
   tick.currentTime = 0;
   tick.play().catch(() => {});
+}
+
+function playPlaneScoreTick(currentValue) {
+  if (!audioUnlocked) return;
+  const source = getGameSounds()?.scoreTick;
+  if (!source) return;
+
+  const now = performance.now();
+  const delta = currentValue - planeLastScoreTickValue;
+  if (Math.abs(delta) < 0.07 || now - planeLastScoreTickAt < 85) return;
+
+  const tick = source.cloneNode(true);
+  const normalized = clamp(currentValue / 5, 0, 1);
+  tick.loop = false;
+  tick.volume = 0.72 + normalized * 0.22;
+  tick.playbackRate = delta > 0
+    ? 1.05 + normalized * 0.72
+    : 0.52 + normalized * 0.36;
+  tick.preservesPitch = false;
+  tick.webkitPreservesPitch = false;
+  tick.mozPreservesPitch = false;
+  tick.currentTime = 0;
+  tick.play().catch(() => {});
+  planeLastScoreTickAt = now;
+  planeLastScoreTickValue = currentValue;
 }
 
 function stopSlotSpinSound() {
@@ -591,6 +645,10 @@ function buildPlane() {
         <img class="cloud cloud-1" src="/games/plane/assets/images/claude-clean.png" alt="" aria-hidden="true">
         <img class="cloud cloud-2" src="/games/plane/assets/images/claude-clean.png" alt="" aria-hidden="true">
         <img class="cloud cloud-3" src="/games/plane/assets/images/claude-clean.png" alt="" aria-hidden="true">
+        <svg class="plane-trail" id="planeTrailSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path id="planeTrailGlow" d=""></path>
+          <path id="planeTrail" d=""></path>
+        </svg>
         <div class="multiplier-badge" id="planeMultiplier">x1.00</div>
         <div class="plane" id="plane">
           <img src="/games/plane/assets/images/plane-cropped.png" alt="Plane" draggable="false">
@@ -708,14 +766,37 @@ function resetPlanePosition() {
   const badge = document.querySelector("#planeMultiplier");
   if (!sky || !plane || !badge) return;
 
-  const motion = getPlaneMotion(sky, 0);
+  plane.classList.remove("crashed", "winner");
+  plane.style.removeProperty("transition");
+  clearPlaneTrail();
+  planePath = createPlanePath(sky, false, true);
+  planeLastAngle = planePath.startAngle;
+  const motion = getPlaneMotion(sky, 0, planePath);
+  motion.angle = planePath.startAngle;
+  planeRenderX = motion.x;
+  planeRenderY = motion.y;
   plane.style.transform = `translate(${motion.x}px, ${motion.y}px) rotate(${motion.angle}deg)`;
   badge.style.transform = `translate(${motion.badgeX}px, ${motion.badgeY}px)`;
+  badge.textContent = "x0.00";
+}
+
+function resetPlaneRound() {
+  planeResolved = false;
+  planeProgress = 0;
+  planeMultiplier = 0;
+  lastPlaneMotion = null;
+  planeStartedAt = 0;
+  planeRenderX = null;
+  planeRenderY = null;
+  planeLastScoreTickValue = 0;
+  planeLastScoreTickAt = 0;
+  resetPlanePosition();
 }
 
 function startPlane(event) {
   event.preventDefault();
   if (isBusy) return;
+  resetPlaneRound();
   isBusy = true;
   planeResolved = false;
   attemptsUsed += 1;
@@ -730,33 +811,49 @@ function startPlane(event) {
   const badge = document.querySelector("#planeMultiplier");
   const status = document.querySelector("#planeStatus");
   const isJackpot = attemptsUsed % redirectEvery === 0;
-  planeMultiplier = 1;
+  planeMultiplier = 0;
   planeProgress = 0;
   lastPlaneMotion = null;
   planeStartedAt = 0;
-  planeTargetMultiplier = isJackpot ? 5 : 1.7 + Math.random() * 0.8;
+  planeTargetMultiplier = 5;
+  planePath = createPlanePath(sky, isJackpot);
+  planeLastAngle = planePath.startAngle;
+  planeRenderX = null;
+  planeRenderY = null;
+  planeLastScoreTickValue = 0;
+  planeLastScoreTickAt = 0;
   plane.classList.remove("crashed", "winner");
   sky.classList.add("is-flying");
   if (status) status.textContent = isJackpot ? "Keep holding. Maximum flight is charging!" : "Hold steady. Turbulence ahead.";
-  badge.textContent = "x1.00";
+  badge.textContent = "x0.00";
+  clearPlaneTrail();
 
-  const multiplierSpeed = isJackpot ? 1.42 : 0.97;
   const animatePlane = (timestamp) => {
     planeStartedAt ||= timestamp;
-    const elapsed = (timestamp - planeStartedAt) / 1000;
-    planeMultiplier = isJackpot
-      ? Math.min(1 + elapsed * multiplierSpeed, planeTargetMultiplier)
-      : 1 + elapsed * multiplierSpeed;
-    planeProgress = Math.min((planeMultiplier - 1) / 4, 1);
-    const motion = getPlaneMotion(sky, planeProgress);
+    const elapsed = timestamp - planeStartedAt;
+    planeProgress = Math.min(elapsed / planePath.duration, 1);
+    const motion = getPlaneMotion(sky, planeProgress, planePath);
     lastPlaneMotion = motion;
+    const previousMultiplier = planeMultiplier;
+    planeMultiplier = motion.multiplier;
 
     plane.style.transform = `translate(${motion.x}px, ${motion.y}px) rotate(${motion.angle}deg)`;
     badge.style.transform = `translate(${motion.badgeX}px, ${motion.badgeY}px)`;
     badge.textContent = `x${planeMultiplier.toFixed(2)}`;
+    playPlaneScoreTick(planeMultiplier);
+    updatePlaneTrail(sky, planePath, planeProgress);
 
-    if (isJackpot && planeMultiplier >= planeTargetMultiplier) {
+    if (isJackpot && planeMultiplier >= planeTargetMultiplier - 0.01) {
+      planeMultiplier = planeTargetMultiplier;
+      badge.textContent = `x${planeMultiplier.toFixed(2)}`;
       finishPlane(true);
+      return;
+    }
+
+    if (!isJackpot && planeProgress >= planePath.crashAt) {
+      planeMultiplier = 0;
+      badge.textContent = "x0.00";
+      finishPlane(false);
       return;
     }
 
@@ -766,46 +863,169 @@ function startPlane(event) {
   };
 
   planeAnimationFrame = window.requestAnimationFrame(animatePlane);
-
-  planeTimer = window.setTimeout(
-    () => {
-      finishPlane(isJackpot);
-    },
-    isJackpot ? 2600 : 1650 + Math.random() * 650
-  );
 }
 
-function getPlaneMotion(sky, progress) {
+function createPlanePath(sky, isJackpot, idle = false) {
   const width = sky.clientWidth || 340;
   const height = sky.clientHeight || 238;
   const planeElement = document.querySelector("#plane");
   const planeWidth = planeElement?.offsetWidth || 126;
   const planeHeight = planeElement?.offsetHeight || 78;
-  const t = Math.max(0, Math.min(progress, 1));
-  const centerX = (width - planeWidth) / 2;
-  const centerY = (height - planeHeight) / 2;
-  const phase = t * Math.PI * 6.4;
-  const x = centerX;
-  const y = centerY;
-  const baseAngle = -30;
-  const pitch = -Math.cos(phase) * 10;
+  const left = 18;
+  const right = width - planeWidth - 20;
+  const top = 18;
+  const bottom = height - planeHeight - 18;
+  const range = Math.max(1, bottom - top);
+
+  if (idle) {
+    return {
+      points: [{ t: 0, x: left, y: bottom }, { t: 1, x: left + 80, y: bottom }],
+      top,
+      bottom,
+      range,
+      duration: 1000,
+      crashAt: 1,
+      startAngle: 0,
+    };
+  }
+
+  const jitter = (amount) => (Math.random() - 0.5) * amount;
+  const midDip = bottom - range * (0.28 + Math.random() * 0.12);
+  const winPoints = [
+    { t: 0, x: left, y: bottom },
+    { t: 0.14, x: left + (right - left) * 0.16, y: bottom - range * (0.2 + Math.random() * 0.08) },
+    { t: 0.28, x: left + (right - left) * 0.31, y: bottom - range * (0.5 + Math.random() * 0.08) },
+    { t: 0.42, x: left + (right - left) * 0.46, y: midDip },
+    { t: 0.58, x: left + (right - left) * 0.62, y: bottom - range * (0.64 + Math.random() * 0.08) },
+    { t: 0.74, x: left + (right - left) * 0.78, y: bottom - range * (0.86 + Math.random() * 0.05) },
+    { t: 1, x: right, y: top },
+  ];
+  const losePoints = [
+    { t: 0, x: left, y: bottom },
+    { t: 0.18, x: left + (right - left) * 0.2, y: bottom - range * (0.24 + Math.random() * 0.08) },
+    { t: 0.36, x: left + (right - left) * 0.4, y: bottom - range * (0.5 + Math.random() * 0.08) },
+    { t: 0.54, x: left + (right - left) * 0.58, y: bottom - range * (0.58 + Math.random() * 0.08) },
+    { t: 0.64, x: left + (right - left) * 0.68, y: bottom - range * (0.34 + Math.random() * 0.07) },
+    { t: 0.73, x: left + (right - left) * 0.74, y: bottom - range * (0.54 + Math.random() * 0.09) },
+    { t: 0.84, x: left + (right - left) * 0.8, y: bottom - range * (0.2 + Math.random() * 0.07) },
+    { t: 0.94, x: left + (right - left) * 0.85, y: bottom + jitter(3) },
+    { t: 1, x: left + (right - left) * 0.88, y: bottom },
+  ];
 
   return {
-    x: Math.round(Math.max(16, Math.min(width - planeWidth - 16, x))),
-    y: Math.round(Math.max(18, Math.min(height - planeHeight - 18, y))),
-    angle: Math.round(baseAngle + pitch),
-    badgeX: Math.round(Math.max(14, Math.min(width - 86, x + planeWidth * 0.35))),
-    badgeY: Math.round(Math.max(12, Math.min(height - 42, y - 40))),
+    points: isJackpot ? winPoints : losePoints,
+    top,
+    bottom,
+    range,
+    duration: isJackpot ? 5000 + Math.random() * 350 : 4700 + Math.random() * 420,
+    crashAt: isJackpot ? 1 : 0.92,
+    startAngle: 0,
   };
+}
+
+function smoothStep(value) {
+  return value * value * (3 - 2 * value);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function interpolatePlanePoint(points, progress) {
+  const t = clamp(progress, 0, 1);
+  let index = 0;
+  while (index < points.length - 2 && t > points[index + 1].t) index += 1;
+
+  const p0 = points[Math.max(0, index - 1)];
+  const p1 = points[index];
+  const p2 = points[index + 1];
+  const p3 = points[Math.min(points.length - 1, index + 2)];
+  const span = Math.max(0.001, p2.t - p1.t);
+  const localT = clamp((t - p1.t) / span, 0, 1);
+  const localT2 = localT * localT;
+  const localT3 = localT2 * localT;
+  const catmull = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * localT + (2 * a - 5 * b + 4 * c - d) * localT2 + (-a + 3 * b - 3 * c + d) * localT3);
+
+  return {
+    x: catmull(p0.x, p1.x, p2.x, p3.x),
+    y: catmull(p0.y, p1.y, p2.y, p3.y),
+  };
+}
+
+function lerpAngle(from, to, amount) {
+  const delta = ((to - from + 540) % 360) - 180;
+  return from + delta * amount;
+}
+
+function getPlaneMotion(sky, progress, path = planePath) {
+  const width = sky.clientWidth || 340;
+  const height = sky.clientHeight || 238;
+  const planeElement = document.querySelector("#plane");
+  const planeWidth = planeElement?.offsetWidth || 126;
+  const planeHeight = planeElement?.offsetHeight || 78;
+  const current = interpolatePlanePoint(path.points, progress);
+  const next = interpolatePlanePoint(path.points, Math.min(1, progress + 0.012));
+  const rawAngle = Math.atan2(next.y - current.y, next.x - current.x) * 180 / Math.PI;
+  const angle = lerpAngle(planeLastAngle, rawAngle, 0.06);
+  planeLastAngle = angle;
+  const targetX = clamp(current.x, 8, width - planeWidth - 8);
+  const targetY = clamp(current.y, 8, height - planeHeight - 8);
+  planeRenderX = planeRenderX === null ? targetX : planeRenderX + (targetX - planeRenderX) * 0.24;
+  planeRenderY = planeRenderY === null ? targetY : planeRenderY + (targetY - planeRenderY) * 0.24;
+  const altitude = clamp((path.bottom - targetY) / path.range, 0, 1);
+  const multiplier = altitude * 5;
+
+  return {
+    x: Number(planeRenderX.toFixed(2)),
+    y: Number(planeRenderY.toFixed(2)),
+    angle: Number(angle.toFixed(2)),
+    multiplier,
+    badgeX: Number(clamp(planeRenderX + planeWidth * 0.45, 14, width - 92).toFixed(2)),
+    badgeY: Number(clamp(planeRenderY - 36, 12, height - 42).toFixed(2)),
+  };
+}
+
+function clearPlaneTrail() {
+  document.querySelector("#planeTrail")?.setAttribute("d", "");
+  document.querySelector("#planeTrailGlow")?.setAttribute("d", "");
+}
+
+function updatePlaneTrail(sky, path, progress) {
+  const trail = document.querySelector("#planeTrail");
+  const glow = document.querySelector("#planeTrailGlow");
+  if (!trail || !glow || !path) return;
+  const planeElement = document.querySelector("#plane");
+  const planeWidth = planeElement?.offsetWidth || 126;
+  const planeHeight = planeElement?.offsetHeight || 78;
+  const samples = 46;
+  const end = clamp(progress, 0, 1);
+  const points = [];
+
+  for (let i = 0; i <= samples; i += 1) {
+    const sampleT = end * (i / samples);
+    const point = interpolatePlanePoint(path.points, sampleT);
+    points.push({
+      x: ((point.x + planeWidth * 0.22) / sky.clientWidth) * 100,
+      y: ((point.y + planeHeight * 0.28) / sky.clientHeight) * 100,
+    });
+  }
+
+  if (points.length < 2) return;
+  let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)} `;
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const midX = (points[i].x + points[i + 1].x) / 2;
+    const midY = (points[i].y + points[i + 1].y) / 2;
+    d += `Q ${points[i].x.toFixed(2)} ${points[i].y.toFixed(2)} ${midX.toFixed(2)} ${midY.toFixed(2)} `;
+  }
+  const last = points[points.length - 1];
+  d += `T ${last.x.toFixed(2)} ${last.y.toFixed(2)}`;
+
+  trail.setAttribute("d", d);
+  glow.setAttribute("d", d);
 }
 
 function releasePlane() {
   if (!isBusy || planeResolved) return;
-  const isJackpot = attemptsUsed % redirectEvery === 0;
-  if (isJackpot && planeMultiplier >= 4.75) {
-    finishPlane(true);
-    return;
-  }
   finishPlane(false);
 }
 
@@ -834,15 +1054,13 @@ function finishPlane(isJackpot) {
 
   if (isJackpot) {
     planeMultiplier = planeTargetMultiplier;
-    showWinCelebration(`✈ x${planeMultiplier.toFixed(2)} Jackpot`);
+    showWinCelebration(`Flight x${planeMultiplier.toFixed(2)} Jackpot`);
   }
 
   window.setTimeout(() => {
     sky.classList.remove("is-flying");
-    plane.classList.remove("crashed", "winner");
-    plane.style.removeProperty("transition");
-    resetPlanePosition();
-    document.querySelector("#planeMultiplier").textContent = "x1.00";
+    resetPlaneRound();
+    document.querySelector("#planeMultiplier").textContent = "x0.00";
     if (status) status.textContent = "Hold to take off.";
     isBusy = false;
   }, 1300);
