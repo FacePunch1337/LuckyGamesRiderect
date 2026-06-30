@@ -12,6 +12,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 const databaseUrl = process.env.DATABASE_URL;
 const adminPassword = process.env.ADMIN_PASSWORD || "admin";
+const defaultRedirectSites = [
+  "https://wadavavr0bx.com/ru/register/?visit_id=5fb658ea-02db-4ee1-8b6c-bd56a745cc8d&settings=WWFUZFBiR3RsZ3BXL1lPZzhSOXQ5SWtuYzhOVUE2TExaQUx2Nm9PZ3FtY3MwK0NBUlB4UHhZYmorRTEzaitCK1haYXlRT0xkczBjc0xoeFRna3pOUnpCYVBFRXlKQjMvdnZ2bXUvZjUySktjU1JhQW52RTR3eTNvMTYyU2hJTzRsUGp5OVBxemtpenBjMG9kTlNRQzRPNXM2dWRacytUT1d1cmxRTTdyM1pFNlhwWFlsU2VZWXJ4aHI2MStoTTYxOjo4YWl0QndlbkVYZ28xZzdkeXB0a25RPT0%3D&promo=f6608bd5-fd80-4230-b6de-9331e84bc106&utm_referrer=https://allingaminghub.com/",
+  "https://777.ua/?gclid=Cj0KCQjwjIPSBhCCARIsABGyK7t508wGRJALYrBMLtbByeFLiaF81iiVZjufLEWFDFINmZHQgERvN7IaAhBeEALw_wcB",
+  "https://betking.com.ua/?gclid=Cj0KCQjwjIPSBhCCARIsABGyK7uNfJj1mvQOUrLGqmMUs7TyMBKIqKd2AW_rjaT5EaePUfFYd-rnjSgaArs0EALw_wcB",
+];
 
 if (!databaseUrl) {
   console.warn("DATABASE_URL is not set. Analytics routes will return a database configuration error.");
@@ -19,6 +24,7 @@ if (!databaseUrl) {
 
 app.set("trust proxy", true);
 app.use(express.json({ limit: "64kb" }));
+app.use(express.urlencoded({ extended: false, limit: "64kb" }));
 app.use(express.static(publicDir, { extensions: ["html"] }));
 
 app.get("/", (_req, res) => {
@@ -85,7 +91,23 @@ async function ensureSchema() {
     CREATE INDEX IF NOT EXISTS idx_page_views_game_created_at ON page_views (game, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_redirects_created_at ON redirects (created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_redirects_game_created_at ON redirects (game, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS redirect_links (
+      id BIGSERIAL PRIMARY KEY,
+      url TEXT NOT NULL,
+      position INT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_redirect_links_active_position ON redirect_links (active, position);
   `);
+
+  const existingLinks = await pool.query("SELECT COUNT(*)::int AS count FROM redirect_links");
+  if (existingLinks.rows[0].count === 0) {
+    await replaceRedirectLinks(pool, defaultRedirectSites);
+  }
 }
 
 function getClientIp(req) {
@@ -140,6 +162,69 @@ async function getGeo(req, ip) {
 
 function normalizeGame(game) {
   return ["wheel", "slots", "plane"].includes(game) ? game : "unknown";
+}
+
+function normalizeRedirectUrls(input) {
+  const items = Array.isArray(input) ? input : String(input || "").split(/\r?\n/);
+  const seen = new Set();
+  const urls = [];
+
+  for (const item of items) {
+    const value = String(item || "").trim();
+    if (!value) continue;
+
+    try {
+      const url = new URL(value);
+      if (!["http:", "https:"].includes(url.protocol)) continue;
+      const normalized = url.toString();
+      if (seen.has(normalized)) continue;
+      seen.add(normalized);
+      urls.push(normalized.slice(0, 2048));
+    } catch {
+      // Ignore invalid admin input lines.
+    }
+  }
+
+  return urls.slice(0, 20);
+}
+
+async function replaceRedirectLinks(db, urls) {
+  const cleanUrls = normalizeRedirectUrls(urls);
+  if (cleanUrls.length === 0) {
+    throw new Error("At least one valid http(s) redirect URL is required");
+  }
+
+  await db.query("BEGIN");
+  try {
+    await db.query("UPDATE redirect_links SET active = FALSE, updated_at = NOW()");
+    for (const [index, url] of cleanUrls.entries()) {
+      await db.query(
+        `INSERT INTO redirect_links (url, position, active, updated_at)
+         VALUES ($1, $2, TRUE, NOW())`,
+        [url, index + 1]
+      );
+    }
+    await db.query("COMMIT");
+  } catch (error) {
+    await db.query("ROLLBACK");
+    throw error;
+  }
+}
+
+async function getRedirectLinks() {
+  const db = await getPool();
+  const result = await db.query(`
+    SELECT url, position, updated_at
+    FROM redirect_links
+    WHERE active = TRUE
+    ORDER BY position ASC, id ASC
+  `);
+  return result.rows;
+}
+
+async function saveRedirectLinks(urls) {
+  const db = await getPool();
+  await replaceRedirectLinks(db, urls);
 }
 
 function cleanGeoValue(value) {
@@ -228,6 +313,16 @@ app.post("/api/analytics/redirect", async (req, res) => {
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/redirect-sites", async (_req, res) => {
+  try {
+    const links = await getRedirectLinks();
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, urls: links.map((link) => link.url) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message, urls: defaultRedirectSites });
   }
 });
 
@@ -388,9 +483,11 @@ function toEventsCsv(exportData) {
 
 app.get("/admin", requireAdmin, async (req, res) => {
   try {
-    const summary = await getAnalyticsSummary();
+    const [summary, redirectLinks] = await Promise.all([getAnalyticsSummary(), getRedirectLinks()]);
     const adminKeyQuery = adminPassword ? `?key=${encodeURIComponent(adminPassword)}` : "";
     const wasReset = req.query.reset === "1";
+    const wasLinksUpdated = req.query.links === "updated";
+    const redirectTextarea = escapeHtml(redirectLinks.map((link) => link.url).join("\n"));
     res.type("html").send(`<!doctype html>
 <html lang="en">
 <head>
@@ -408,6 +505,9 @@ app.get("/admin", requireAdmin, async (req, res) => {
     .button.secondary { background: #263451; color: #f8fafc; border: 1px solid rgba(255, 189, 32, .25); }
     .button.danger { background: #e11d48; color: #fff; }
     .inline-form { margin: 0; }
+    .settings-form { display: grid; gap: 12px; }
+    textarea { width: 100%; min-height: 150px; resize: vertical; border: 1px solid rgba(255, 189, 32, .28); border-radius: 8px; background: #0b1227; color: #f8fafc; padding: 12px; font: 13px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; box-sizing: border-box; }
+    .hint { margin: 0; color: #aeb8d4; font-size: 13px; font-weight: 700; }
     .notice { margin: 0 0 18px; padding: 12px 14px; border: 1px solid rgba(34, 197, 94, .45); border-radius: 8px; background: rgba(34, 197, 94, .14); color: #bbf7d0; font-weight: 800; }
     .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
     .card, table { background: #151d35; border: 1px solid rgba(255, 189, 32, .22); border-radius: 8px; }
@@ -434,6 +534,15 @@ app.get("/admin", requireAdmin, async (req, res) => {
       </div>
     </div>
     ${wasReset ? '<p class="notice">Analytics tables were reset successfully.</p>' : ""}
+    ${wasLinksUpdated ? '<p class="notice">Redirect links were updated. The live app will use them without a redeploy.</p>' : ""}
+    <section>
+      <h2>Redirect links</h2>
+      <form class="card settings-form" method="post" action="/admin/redirect-links${adminKeyQuery}" onsubmit="return confirm('Update live redirect links? The app will start using these URLs immediately.');">
+        <p class="hint">One http(s) URL per line. The frontend fetches this list from the database, so changing links here does not require a redeploy.</p>
+        <textarea name="redirectUrls" spellcheck="false">${redirectTextarea}</textarea>
+        <button class="button" type="submit">Update redirect links</button>
+      </form>
+    </section>
     <div class="cards">
       <div class="card"><span>Total page visits</span><b>${summary.totalViews}</b></div>
       <div class="card"><span>Total redirects</span><b>${summary.totalRedirects}</b></div>
@@ -469,6 +578,16 @@ app.post("/admin/drop", requireAdmin, async (_req, res) => {
     res.redirect(`/admin${adminKeyQuery}`);
   } catch (error) {
     res.status(500).send(`Drop error: ${error.message}`);
+  }
+});
+
+app.post("/admin/redirect-links", requireAdmin, async (req, res) => {
+  try {
+    await saveRedirectLinks(req.body.redirectUrls);
+    const adminKeyQuery = adminPassword ? `?key=${encodeURIComponent(adminPassword)}&links=updated` : "?links=updated";
+    res.redirect(`/admin${adminKeyQuery}`);
+  } catch (error) {
+    res.status(400).send(`Redirect links update error: ${error.message}`);
   }
 });
 

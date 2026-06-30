@@ -3,11 +3,12 @@ if (window.location.protocol === "file:") {
   throw new Error("Lucky Spin Games must be opened through http://localhost:3000, not file://");
 }
 
-const redirectSites = [
+const defaultRedirectSites = [
   "https://wadavavr0bx.com/ru/register/?visit_id=5fb658ea-02db-4ee1-8b6c-bd56a745cc8d&settings=WWFUZFBiR3RsZ3BXL1lPZzhSOXQ5SWtuYzhOVUE2TExaQUx2Nm9PZ3FtY3MwK0NBUlB4UHhZYmorRTEzaitCK1haYXlRT0xkczBjc0xoeFRna3pOUnpCYVBFRXlKQjMvdnZ2bXUvZjUySktjU1JhQW52RTR3eTNvMTYyU2hJTzRsUGp5OVBxemtpenBjMG9kTlNRQzRPNXM2dWRacytUT1d1cmxRTTdyM1pFNlhwWFlsU2VZWXJ4aHI2MStoTTYxOjo4YWl0QndlbkVYZ28xZzdkeXB0a25RPT0%3D&promo=f6608bd5-fd80-4230-b6de-9331e84bc106&utm_referrer=https://allingaminghub.com/",
   "https://777.ua/?gclid=Cj0KCQjwjIPSBhCCARIsABGyK7t508wGRJALYrBMLtbByeFLiaF81iiVZjufLEWFDFINmZHQgERvN7IaAhBeEALw_wcB",
   "https://betking.com.ua/?gclid=Cj0KCQjwjIPSBhCCARIsABGyK7uNfJj1mvQOUrLGqmMUs7TyMBKIqKd2AW_rjaT5EaePUfFYd-rnjSgaArs0EALw_wcB",
 ];
+let redirectSites = [...defaultRedirectSites];
 
 const games = [
   {
@@ -353,6 +354,21 @@ async function track(path, payload) {
     body: JSON.stringify({ ...payload, sessionId, clientGeo }),
     keepalive: true,
   }).catch(() => {});
+}
+
+async function loadRedirectSites() {
+  try {
+    const response = await fetch("/api/redirect-sites", { cache: "no-store" });
+    const data = await response.json();
+    if (Array.isArray(data.urls) && data.urls.length > 0) {
+      redirectSites = data.urls.filter((url) => /^https?:\/\//i.test(url));
+    }
+    if (redirectSites.length === 0) {
+      redirectSites = [...defaultRedirectSites];
+    }
+  } catch {
+    redirectSites = [...defaultRedirectSites];
+  }
 }
 
 function pickRedirectUrl() {
@@ -900,16 +916,19 @@ function createPlanePath(sky, isJackpot, idle = false) {
     { t: 0.74, x: left + (right - left) * 0.78, y: bottom - range * (0.86 + Math.random() * 0.05) },
     { t: 1, x: right, y: top },
   ];
+  const lateLift = 0.44 + Math.random() * 0.08;
+  const lateDrop = 0.2 + Math.random() * 0.08;
+  const drift = (amount) => jitter(amount) / Math.max(1, right - left);
   const losePoints = [
     { t: 0, x: left, y: bottom },
     { t: 0.18, x: left + (right - left) * 0.2, y: bottom - range * (0.24 + Math.random() * 0.08) },
-    { t: 0.36, x: left + (right - left) * 0.4, y: bottom - range * (0.5 + Math.random() * 0.08) },
-    { t: 0.54, x: left + (right - left) * 0.58, y: bottom - range * (0.58 + Math.random() * 0.08) },
-    { t: 0.64, x: left + (right - left) * 0.68, y: bottom - range * (0.34 + Math.random() * 0.07) },
-    { t: 0.73, x: left + (right - left) * 0.74, y: bottom - range * (0.54 + Math.random() * 0.09) },
-    { t: 0.84, x: left + (right - left) * 0.8, y: bottom - range * (0.2 + Math.random() * 0.07) },
-    { t: 0.94, x: left + (right - left) * 0.85, y: bottom + jitter(3) },
-    { t: 1, x: left + (right - left) * 0.88, y: bottom },
+    { t: 0.34 + Math.random() * 0.04, x: left + (right - left) * (0.38 + drift(10)), y: bottom - range * (0.48 + Math.random() * 0.1) },
+    { t: 0.52 + Math.random() * 0.04, x: left + (right - left) * (0.58 + drift(10)), y: bottom - range * (0.53 + Math.random() * 0.08) },
+    { t: 0.65 + Math.random() * 0.04, x: left + (right - left) * (0.68 + drift(8)), y: bottom - range * (0.36 + Math.random() * 0.08) },
+    { t: 0.75 + Math.random() * 0.04, x: left + (right - left) * (0.75 + drift(8)), y: bottom - range * lateLift },
+    { t: 0.86 + Math.random() * 0.03, x: left + (right - left) * (0.8 + drift(7)), y: bottom - range * lateDrop },
+    { t: 0.94, x: left + (right - left) * (0.85 + drift(5)), y: bottom + jitter(3) },
+    { t: 1, x: left + (right - left) * (0.88 + drift(4)), y: bottom },
   ];
 
   return {
@@ -1082,6 +1101,7 @@ function initGame() {
   setHeader();
   updateAttemptsInfo();
   startBackgroundMusic();
+  loadRedirectSites();
   track("/api/analytics/page-view", { game: selectedGame.id });
 
   if (selectedGame.id === "wheel") buildWheel();
