@@ -31,6 +31,20 @@ const games = [
 ];
 
 const wheelPrizes = ["50 Free Spins", "5 Free Spins", "10 Free Spins", "15 Free Spins", "20 Free Spins", "25 Free Spins", "30 Free Spins", "40 Free Spins"];
+const gamePrompts = {
+  wheel: {
+    kicker: "FREE SPINS",
+    copy: "Spin the wheel and land on the jackpot.",
+  },
+  slots: {
+    kicker: "3 IN A ROW",
+    copy: "Pull the lever and match the winning row.",
+  },
+  plane: {
+    kicker: "HOLD TO FLY",
+    copy: "Reach x5 and unlock the jackpot.",
+  },
+};
 const slotSymbols = [
   { id: "seven", label: "Seven", src: "/games/slots/assets/images/Seven.png" },
   { id: "cherry", label: "Cherry", src: "/games/slots/assets/images/Cherry.png" },
@@ -38,7 +52,7 @@ const slotSymbols = [
   { id: "watermelon", label: "Watermelon", src: "/games/slots/assets/images/Watermelon.png" },
   { id: "lemon", label: "Lemon", src: "/games/slots/assets/images/Lemon.png" },
 ];
-const slotStripSymbols = [...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols];
+const slotStripSymbols = [...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols, ...slotSymbols];
 const names = ["William", "Olivia", "James", "Sarah", "Henry", "Emma"];
 const gameAudioFiles = {
   wheel: {
@@ -58,6 +72,7 @@ const title = document.querySelector("#app-title");
 const eyebrow = document.querySelector("#gameEyebrow");
 const subtitle = document.querySelector("#gameSubtitle");
 const attemptsInfo = document.querySelector("#attemptsInfo");
+const gamePrompt = document.querySelector("#gamePrompt");
 const winOverlay = document.querySelector("#winOverlay");
 const winPrize = document.querySelector("#winPrize");
 const confettiLayer = document.querySelector("#confettiLayer");
@@ -89,9 +104,10 @@ let winCloseTimer = null;
 let audioUnlocked = false;
 let gameSounds = null;
 let pendingMusicStart = false;
-let slotSpinSoundTimer = null;
-let slotSpinSoundStopTimer = null;
-let slotSpinSoundStartedAt = 0;
+let slotSpinSoundFrame = null;
+let slotSpinSoundSwitchTimer = null;
+let slotSpinLastCenterIndex = null;
+let slotSpinLastTickAt = 0;
 
 function timeout(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -162,73 +178,86 @@ function safePlay(audio) {
   });
 }
 
+function startBackgroundMusic() {
+  const background = getGameSounds()?.background;
+  if (!background) return;
+  background.play().catch(() => {
+    pendingMusicStart = true;
+  });
+}
+
 function stopSound(audio) {
   if (!audio) return;
   audio.pause();
   audio.currentTime = 0;
 }
 
-function playPitchedOneShot(source, playbackRate, volume = 0.68) {
+function playSlotSpinTick(source, volume = 0.68) {
   if (!source) return;
   const tick = source.cloneNode(true);
   tick.loop = false;
   tick.volume = volume;
-  tick.playbackRate = playbackRate;
-  tick.preservesPitch = false;
-  tick.webkitPreservesPitch = false;
-  tick.mozPreservesPitch = false;
   tick.currentTime = 0;
   tick.play().catch(() => {});
 }
 
 function stopSlotSpinSound() {
-  window.clearTimeout(slotSpinSoundTimer);
-  window.clearTimeout(slotSpinSoundStopTimer);
-  slotSpinSoundTimer = null;
-  slotSpinSoundStopTimer = null;
+  if (slotSpinSoundFrame) {
+    cancelAnimationFrame(slotSpinSoundFrame);
+  }
+  window.clearTimeout(slotSpinSoundSwitchTimer);
+  slotSpinSoundFrame = null;
+  slotSpinSoundSwitchTimer = null;
+  slotSpinLastCenterIndex = null;
+  slotSpinLastTickAt = 0;
 }
 
-function startSlotSpinSound(totalDuration = 1680) {
+function getTranslateY(element) {
+  const transform = window.getComputedStyle(element).transform;
+  if (!transform || transform === "none") return 0;
+  const matrix = new DOMMatrixReadOnly(transform);
+  return matrix.m42;
+}
+
+function startSlotSpinSound(strip, cellHeight) {
   if (!audioUnlocked) return;
   const source = getGameSounds()?.action;
-  if (!source) return;
+  if (!source || !strip || !cellHeight) return;
 
   stopSlotSpinSound();
-  slotSpinSoundStartedAt = performance.now();
+  slotSpinLastCenterIndex = Math.round(Math.abs(getTranslateY(strip)) / cellHeight);
+  slotSpinLastTickAt = 0;
 
   const tick = () => {
-    const elapsed = performance.now() - slotSpinSoundStartedAt;
-    const progress = Math.min(elapsed / totalDuration, 1);
-    const easeOut = 1 - Math.pow(1 - progress, 2);
-    const playbackRate = 1.24 - easeOut * 0.42;
-    const interval = 42 + easeOut * 82;
-    const volume = 0.72 - progress * 0.16;
+    const now = performance.now();
+    const centerIndex = Math.round(Math.abs(getTranslateY(strip)) / cellHeight);
 
-    playPitchedOneShot(source, playbackRate, volume);
-
-    if (progress < 1) {
-      slotSpinSoundTimer = window.setTimeout(tick, interval);
+    if (centerIndex !== slotSpinLastCenterIndex) {
+      slotSpinLastCenterIndex = centerIndex;
+      if (now - slotSpinLastTickAt >= 86) {
+        slotSpinLastTickAt = now;
+        playSlotSpinTick(source, 0.68);
+      }
     }
+
+    slotSpinSoundFrame = requestAnimationFrame(tick);
   };
 
-  tick();
-  slotSpinSoundStopTimer = window.setTimeout(stopSlotSpinSound, totalDuration + 60);
+  slotSpinSoundFrame = requestAnimationFrame(tick);
 }
 
 function unlockGameAudio() {
   const sounds = getGameSounds();
   if (!sounds) return;
   audioUnlocked = true;
-  sounds.background.play().catch(() => {
-    pendingMusicStart = true;
-  });
+  startBackgroundMusic();
 }
 
 function unlockAudioFromGesture() {
   unlockGameAudio();
   if (pendingMusicStart) {
     pendingMusicStart = false;
-    getGameSounds()?.background.play().catch(() => {});
+    startBackgroundMusic();
   }
 }
 
@@ -301,6 +330,10 @@ function updateAttemptsInfo() {
   attemptsInfo.textContent = `Attempts left: ${remaining}/${redirectEvery}`;
 }
 
+function getGameLogoPath() {
+  return `/games/${selectedGame.id}/assets/images/logo.png`;
+}
+
 function launchConfetti() {
   confettiLayer.innerHTML = "";
   Array.from({ length: 180 }, (_, index) => {
@@ -354,16 +387,14 @@ winPrize.addEventListener("click", closeWinCelebration);
 
 function setHeader() {
   document.body.dataset.game = selectedGame.id;
-  if (selectedGame.id === "wheel") {
-    eyebrow.textContent = "";
-    title.innerHTML = `<img class="game-logo-title" src="/games/wheel/assets/images/logo.png" alt="${selectedGame.title}">`;
-    subtitle.textContent = "";
-    return;
-  }
-
-  title.textContent = selectedGame.title;
-  eyebrow.textContent = selectedGame.eyebrow;
-  subtitle.textContent = selectedGame.subtitle;
+  eyebrow.textContent = "";
+  title.innerHTML = `<img class="game-logo-title" src="${getGameLogoPath()}" alt="${selectedGame.title}">`;
+  subtitle.textContent = "";
+  const prompt = gamePrompts[selectedGame.id] || { kicker: "PLAY NOW", copy: "Unlock the jackpot reward." };
+  gamePrompt.innerHTML = `
+    <span class="game-prompt-kicker">${prompt.kicker}</span>
+    <span class="game-prompt-copy">${prompt.copy}</span>
+  `;
 }
 
 function buildWheel() {
@@ -445,7 +476,6 @@ function buildSlots() {
           .join("")}
       </div>
       <div class="slot-lever" aria-hidden="true"><span></span></div>
-      <div class="payline" id="slotMessage">Match 3 symbols to unlock the jackpot</div>
     </div>
     <button class="spin-button" id="gameButton" type="button" data-label="Pull Lever" aria-label="Pull Lever">Pull Lever</button>
   `;
@@ -485,17 +515,17 @@ function playSlots() {
 
   button.disabled = true;
   setButtonLabel(button, "Rolling...");
-  message.textContent = "Reels are spinning...";
+  if (message) message.textContent = "Reels are spinning...";
   unlockGameAudio();
   machine.classList.remove("slot-win");
   machine.classList.add("slot-spinning");
   syncSlotReelMetrics();
-  startSlotSpinSound(1680);
 
   reels.forEach((reel, index) => {
     const strip = reel.querySelector(".reel-strip");
     const symbolIndex = slotSymbols.findIndex((symbol) => symbol.id === result[index].id);
-    const finalIndex = slotSymbols.length * 3 + symbolIndex;
+    const extraSpin = index === reels.length - 1 ? slotSymbols.length * 2 : 0;
+    const finalIndex = slotSymbols.length * 3 + symbolIndex + extraSpin;
     const reelCellHeight = reel.clientHeight || 88;
     const finalOffset = finalIndex * reelCellHeight;
 
@@ -506,34 +536,40 @@ function playSlots() {
     reel.classList.add("is-spinning");
 
     window.setTimeout(() => {
-      strip.style.transition = `transform ${0.95 + index * 0.22}s cubic-bezier(0.12, 0.82, 0.14, 1)`;
+      const reelDuration = 1.25 + index * 0.3 + (index === reels.length - 1 ? 1.3 : 0);
+      strip.style.transition = `transform ${reelDuration}s cubic-bezier(0.12, 0.82, 0.14, 1)`;
       strip.style.transform = `translateY(-${finalOffset}px)`;
     }, 40 + index * 120);
 
     window.setTimeout(() => {
       reel.classList.remove("is-spinning");
-      reel.classList.add("has-stopped");
-    }, 1160 + index * 260);
+    }, 1500 + index * 340 + (index === reels.length - 1 ? 1300 : 0));
   });
 
+  const firstReel = reels[0];
+  const firstStrip = firstReel?.querySelector(".reel-strip");
+  const lastReel = reels[reels.length - 1];
+  const lastStrip = lastReel?.querySelector(".reel-strip");
+  startSlotSpinSound(firstStrip, firstReel?.clientHeight || 88);
+  slotSpinSoundSwitchTimer = window.setTimeout(() => {
+    startSlotSpinSound(lastStrip, lastReel?.clientHeight || 88);
+  }, 280);
+
   window.setTimeout(() => {
-    reels.forEach((reel) => {
-      reel.classList.remove("has-stopped");
-    });
     machine.classList.remove("slot-spinning");
     stopSlotSpinSound();
     if (isJackpot) {
       machine.classList.add("slot-win");
-      message.textContent = "Triple 7 jackpot unlocked!";
+      if (message) message.textContent = "Triple 7 jackpot unlocked!";
       showWinCelebration("Triple 7 Jackpot");
     } else {
-      message.textContent = "No match. Try again.";
+      if (message) message.textContent = "No match. Try again.";
     }
     button.disabled = false;
     setButtonLabel(button, "Pull Lever");
     isBusy = false;
     if (isJackpot) trackRedirectAndGo();
-  }, 2050);
+  }, 3900);
 }
 
 function getNonWinningSlotResult() {
@@ -560,7 +596,6 @@ function buildPlane() {
           <img src="/games/plane/assets/images/plane-cropped.png" alt="Plane" draggable="false">
         </div>
       </div>
-      <p class="plane-status" id="planeStatus">Hold to take off.</p>
     </div>
     <button class="spin-button hold-button" id="gameButton" type="button" data-label="Hold to Fly" aria-label="Hold to Fly">Hold to Fly</button>
   `;
@@ -583,10 +618,12 @@ function runGameIntro() {
     ? createPlaneIntro()
     : selectedGame.id === "wheel"
       ? createWheelIntro()
-      : createBasicGameIntro();
+      : selectedGame.id === "slots"
+        ? createSlotsIntro()
+        : createBasicGameIntro();
   document.body.appendChild(intro);
 
-  const duration = selectedGame.id === "plane" ? 2450 : selectedGame.id === "wheel" ? 2300 : 1250;
+  const duration = selectedGame.id === "plane" ? 2450 : selectedGame.id === "wheel" ? 2300 : selectedGame.id === "slots" ? 2500 : 1250;
   window.setTimeout(() => {
     document.body.classList.remove("game-intro-active");
     intro.classList.add("is-out");
@@ -629,6 +666,24 @@ function createWheelIntro() {
       <span class="wheel-petal wheel-petal-3"></span>
       <img class="wheel-intro-moon" src="/games/wheel/assets/images/moon.png" alt="">
       <img class="wheel-intro-logo" src="/games/wheel/assets/images/logo.png" alt="Katana Spins">
+    </div>
+  `;
+  return intro;
+}
+
+function createSlotsIntro() {
+  const intro = document.createElement("div");
+  intro.className = "game-intro slots-intro";
+  intro.setAttribute("aria-hidden", "true");
+  intro.innerHTML = `
+    <video class="slots-intro-video" autoplay muted loop playsinline preload="auto">
+      <source src="/games/slots/assets/images/IntroBackground.mp4" type="video/mp4">
+    </video>
+    <div class="slots-intro-stage">
+      <img class="slots-intro-lightning slots-intro-lightning-left" src="/games/slots/assets/images/Lighting.png" alt="">
+      <img class="slots-intro-lightning slots-intro-lightning-right" src="/games/slots/assets/images/Lighting.png" alt="">
+      <img class="slots-intro-zeus" src="/games/slots/assets/images/LogoZeus.png" alt="">
+      <img class="slots-intro-logo" src="/games/slots/assets/images/logo.png" alt="Royals Slot">
     </div>
   `;
   return intro;
@@ -682,7 +737,7 @@ function startPlane(event) {
   planeTargetMultiplier = isJackpot ? 5 : 1.7 + Math.random() * 0.8;
   plane.classList.remove("crashed", "winner");
   sky.classList.add("is-flying");
-  status.textContent = isJackpot ? "Keep holding. Maximum flight is charging!" : "Hold steady. Turbulence ahead.";
+  if (status) status.textContent = isJackpot ? "Keep holding. Maximum flight is charging!" : "Hold steady. Turbulence ahead.";
   badge.textContent = "x1.00";
 
   const multiplierSpeed = isJackpot ? 1.42 : 0.97;
@@ -770,7 +825,9 @@ function finishPlane(isJackpot) {
   } else {
     explodePlane(plane, sky);
   }
-  status.textContent = isJackpot ? `Max flight reached: x${planeMultiplier.toFixed(2)}!` : `Crashed at x${planeMultiplier.toFixed(2)}. Try again.`;
+  if (status) {
+    status.textContent = isJackpot ? `Max flight reached: x${planeMultiplier.toFixed(2)}!` : `Crashed at x${planeMultiplier.toFixed(2)}. Try again.`;
+  }
   if (audioUnlocked && !isJackpot) {
     safePlay(getGameSounds()?.explosion);
   }
@@ -786,7 +843,7 @@ function finishPlane(isJackpot) {
     plane.style.removeProperty("transition");
     resetPlanePosition();
     document.querySelector("#planeMultiplier").textContent = "x1.00";
-    status.textContent = "Hold to take off.";
+    if (status) status.textContent = "Hold to take off.";
     isBusy = false;
   }, 1300);
 
@@ -806,6 +863,7 @@ function explodePlane(plane, sky) {
 function initGame() {
   setHeader();
   updateAttemptsInfo();
+  startBackgroundMusic();
   track("/api/analytics/page-view", { game: selectedGame.id });
 
   if (selectedGame.id === "wheel") buildWheel();
@@ -816,3 +874,8 @@ function initGame() {
 
 initGame();
 window.addEventListener("resize", syncSlotReelMetrics);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && audioUnlocked) {
+    startBackgroundMusic();
+  }
+});
